@@ -77,8 +77,7 @@ public class ORemoteServerChannel {
       final String iURL,
       final String user,
       final String passwd,
-      final int currentProtocolVersion)
-      throws IOException {
+      final int currentProtocolVersion) {
     this.check = check;
     this.localNodeName = localNodeName;
     this.server = iServer;
@@ -105,8 +104,6 @@ public class ORemoteServerChannel {
     executor =
         new ThreadPoolExecutor(
             1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(10), reject);
-
-    connect();
   }
 
   public int getDistributedProtocolVersion() {

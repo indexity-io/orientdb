@@ -45,8 +45,7 @@ public class ORemoteServerController {
       final String iServer,
       final String iURL,
       final String user,
-      final String passwd)
-      throws IOException {
+      final String passwd) {
     if (user == null) throw new IllegalArgumentException("User is null");
     if (passwd == null) throw new IllegalArgumentException("Password is null");
 
@@ -74,6 +73,15 @@ public class ORemoteServerController {
       responseChannels[i] =
           new ORemoteServerChannel(
               check, localNodeName, iServer, iURL, user, passwd, CURRENT_PROTOCOL_VERSION);
+  }
+
+  public void connect() throws IOException {
+    for (ORemoteServerChannel ch : requestChannels) {
+      ch.connect();
+    }
+    for (ORemoteServerChannel ch : responseChannels) {
+      ch.connect();
+    }
   }
 
   public void sendRequest(final ODistributedRequest req) {

@@ -23,14 +23,15 @@ public class ORemoteServerManager {
   public ORemoteServerController connectRemoteServer(
       final String rNodeName, String host, String user, String password) throws IOException {
     // OK
-    ORemoteServerController remoteServer =
+    final ORemoteServerController remoteServer =
         new ORemoteServerController(check, localNodeName, rNodeName, host, user, password);
     final ORemoteServerController old = remoteServers.putIfAbsent(rNodeName, remoteServer);
-    if (old != null) {
-      remoteServer.close();
-      remoteServer = old;
+    if (old == null) {
+      remoteServer.connect();
+      return remoteServer;
+    } else {
+      return old;
     }
-    return remoteServer;
   }
 
   public void closeRemoteServer(final String node) {
