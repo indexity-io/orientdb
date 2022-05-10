@@ -65,7 +65,6 @@ import com.orientechnologies.orient.server.distributed.impl.lock.OFreezeGuard;
 import com.orientechnologies.orient.server.distributed.impl.lock.OLockGuard;
 import com.orientechnologies.orient.server.distributed.impl.lock.OLockManager;
 import com.orientechnologies.orient.server.distributed.impl.lock.OLockManagerImpl;
-import com.orientechnologies.orient.server.distributed.impl.lock.OnLocksAcquired;
 import com.orientechnologies.orient.server.distributed.impl.task.OLockKeySource;
 import com.orientechnologies.orient.server.distributed.impl.task.OUnreachableServerLocalTask;
 import com.orientechnologies.orient.server.distributed.impl.task.transaction.OTransactionUniqueKey;
@@ -84,6 +83,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -374,41 +374,55 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
         SortedSet<OTransactionUniqueKey> uniqueKeys = ((OLockKeySource) task).getUniqueKeys();
         OTransactionId txId = ((OLockKeySource) task).getTransactionId();
 
-        OnLocksAcquired acquired =
-            (guards) -> {
-              Runnable executeTask =
-                  () -> {
-                    try {
-                      execute(request);
-                    } finally {
-                      this.lockManager.unlock(guards);
-                    }
-                  };
-              try {
-                this.requestExecutor.submit(executeTask);
-              } catch (RejectedExecutionException e) {
-                task.finished(this);
-                this.lockManager.unlock(guards);
-                throw e;
-              }
-            };
         try {
-          this.lockManager.lock(rids, uniqueKeys, txId, acquired);
+          this.lockManager.lock(
+              rids,
+              uniqueKeys,
+              txId,
+              (guards) -> {
+                scheduleExecute(request, () -> this.lockManager.unlock(guards));
+              });
         } catch (OOfflineNodeException e) {
           task.finished(this);
           throw e;
         }
       } else {
-        try {
-          this.requestExecutor.submit(
-              () -> {
-                execute(request);
-              });
-        } catch (RejectedExecutionException e) {
-          task.finished(this);
-          throw e;
-        }
+        scheduleExecute(request, null);
       }
+    }
+  }
+
+  private CompletableFuture<Void> scheduleExecute(
+      ODistributedRequest request, Runnable onCompletion) {
+    ORemoteTask task = request.getTask();
+    try {
+      return CompletableFuture.runAsync(() -> execute(request), requestExecutor)
+          .whenComplete(
+              (res, err) -> {
+                if (onCompletion != null) {
+                  onCompletion.run();
+                }
+              })
+          .whenComplete(
+              (res, err) -> {
+                if (err != null) {
+                  ODistributedServerLog.error(
+                      this,
+                      localNodeName,
+                      manager.getNodeNameById(request.getId().getNodeId()),
+                      DIRECTION.IN,
+                      "Error processing request %s on local node: %s",
+                      err,
+                      request.getId(),
+                      task);
+                }
+              });
+    } catch (RejectedExecutionException e) {
+      task.finished(this);
+      if (onCompletion != null) {
+        onCompletion.run();
+      }
+      throw e;
     }
   }
 
