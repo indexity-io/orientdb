@@ -336,22 +336,35 @@ public class OClusterHealthChecker implements Runnable {
           final Map<String, Object> responses = (Map<String, Object>) payload;
 
           final String lockManagerServer = manager.getLockManagerServer();
-          if (lockManagerServer != null)
+          if (lockManagerServer != null) {
             for (Map.Entry<String, Object> r : responses.entrySet()) {
-              if (!lockManagerServer.equals(String.valueOf(r.getValue()))) {
+              final Object serverName = r.getKey();
+              final Object responsePayload = r.getValue();
+              if (responsePayload instanceof Throwable) {
                 ODistributedServerLog.warn(
                     this,
                     manager.getLocalNodeName(),
                     null,
                     ODistributedServerLog.DIRECTION.NONE,
-                    "Server '%s' is using server '%s' as lock, while current server is using '%s'",
-                    r.getKey(),
-                    r.getValue(),
-                    lockManagerServer);
+                    "Server '%s' responded to gossip message with an error",
+                    (Throwable) responsePayload,
+                    serverName);
+              } else {
+                servers.remove(r.getKey());
+                if (!lockManagerServer.equals(String.valueOf(responsePayload))) {
+                  ODistributedServerLog.warn(
+                      this,
+                      manager.getLocalNodeName(),
+                      null,
+                      ODistributedServerLog.DIRECTION.NONE,
+                      "Server '%s' is using server '%s' as lock, while current server is using '%s'",
+                      serverName,
+                      responsePayload,
+                      lockManagerServer);
+                }
               }
             }
-
-          servers.removeAll(responses.keySet());
+          }
         }
       } catch (ODistributedException e) {
         // NO SERVER RESPONDED, THE SERVER COULD BE ISOLATED: SET ALL THE SERVER AS OFFLINE
