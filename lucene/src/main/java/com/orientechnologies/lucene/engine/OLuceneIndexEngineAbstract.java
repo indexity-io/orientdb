@@ -100,7 +100,7 @@ public abstract class OLuceneIndexEngineAbstract extends OSharedResourceAdaptive
   private TimerTask commitTask;
   private final AtomicBoolean closed;
   private final OStorage storage;
-  private volatile long reopenToken;
+  private final AtomicLong reopenToken = new AtomicLong();
   private Analyzer indexAnalyzer;
   private Analyzer queryAnalyzer;
   private volatile OLuceneDirectory directory;
@@ -138,8 +138,7 @@ public abstract class OLuceneIndexEngineAbstract extends OSharedResourceAdaptive
 
   protected void addDocument(Document doc) {
     try {
-
-      reopenToken = indexWriter.addDocument(doc);
+      reopenToken.getAndAccumulate(indexWriter.addDocument(doc), Math::max);
     } catch (IOException e) {
       OLogManager.instance()
           .error(this, "Error on adding new document '%s' to Lucene index", e, doc);
@@ -259,7 +258,7 @@ public abstract class OLuceneIndexEngineAbstract extends OSharedResourceAdaptive
       indexWriter = createIndexWriter(directory.getDirectory());
       searcherManager = new SearcherManager(indexWriter, true, true, null);
 
-      reopenToken = 0;
+      reopenToken.set(0);
 
       startNRT();
 
@@ -445,8 +444,7 @@ public abstract class OLuceneIndexEngineAbstract extends OSharedResourceAdaptive
 
   void deleteDocument(Query query) {
     try {
-
-      reopenToken = indexWriter.deleteDocuments(query);
+      reopenToken.getAndAccumulate(indexWriter.deleteDocuments(query), Math::max);
       if (!indexWriter.hasDeletions()) {
         OLogManager.instance()
             .error(
@@ -493,7 +491,7 @@ public abstract class OLuceneIndexEngineAbstract extends OSharedResourceAdaptive
     try {
       updateLastAccess();
       openIfClosed();
-      nrt.waitForGeneration(reopenToken);
+      nrt.waitForGeneration(reopenToken.get());
       return searcherManager.acquire();
     } catch (Exception e) {
       OLogManager.instance().error(this, "Error on get searcher from Lucene index", e);
@@ -570,7 +568,7 @@ public abstract class OLuceneIndexEngineAbstract extends OSharedResourceAdaptive
     updateLastAccess();
     openIfClosed();
     try {
-      reopenToken = indexWriter.deleteAll();
+      reopenToken.getAndAccumulate(indexWriter.deleteAll(), Math::max);
     } catch (IOException e) {
       OLogManager.instance().error(this, "Error on clearing Lucene index", e);
     }
