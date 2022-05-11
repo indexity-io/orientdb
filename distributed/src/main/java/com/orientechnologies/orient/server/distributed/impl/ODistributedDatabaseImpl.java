@@ -415,6 +415,9 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
                       err,
                       request.getId(),
                       task);
+                  if (task.hasResponse()) {
+                    sendResponseBack(this, this.manager, request.getId(), err);
+                  }
                 }
               });
     } catch (RejectedExecutionException e) {
