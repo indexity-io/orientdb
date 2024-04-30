@@ -22,13 +22,13 @@ package com.orientechnologies.orient.core.storage.index.sbtree.singlevalue.v3;
 
 import com.orientechnologies.common.comparator.ODefaultComparator;
 import com.orientechnologies.common.exception.OException;
+import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
 import com.orientechnologies.common.serialization.types.OLongSerializer;
 import com.orientechnologies.common.serialization.types.OShortSerializer;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.encryption.OEncryption;
-import com.orientechnologies.orient.core.exception.NotEmptyComponentCanNotBeRemovedException;
 import com.orientechnologies.orient.core.exception.OTooBigIndexKeyException;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
@@ -419,11 +419,13 @@ public final class CellBTreeSingleValueV3<K> extends ODurableComponent
           try {
             final long size = size();
             if (size > 0) {
-              throw new NotEmptyComponentCanNotBeRemovedException(
-                  getName()
-                      + " : Not empty index can not be deleted. Index has "
-                      + size
-                      + " records");
+              OLogManager.instance()
+                  .warn(
+                      this,
+                      getName()
+                          + " : Not empty index can not be deleted. Index has "
+                          + size
+                          + " records");
             }
 
             deleteFile(atomicOperation, fileId);
