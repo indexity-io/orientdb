@@ -3206,7 +3206,12 @@ public class OConsoleDatabaseApp extends OrientConsole
     return (float) (System.currentTimeMillis() - start) / 1000;
   }
 
-  protected void printError(final Exception e) {
+  @Override
+  protected void onException(Throwable e) {
+    printError(e);
+  }
+
+  protected void printError(final Throwable e) {
     if (properties.get("debug") != null && Boolean.parseBoolean(properties.get("debug"))) {
       message("\n\n!ERROR:");
       e.printStackTrace(err);
