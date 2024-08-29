@@ -87,6 +87,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
       new ConcurrentHashMap<>(64);
   private final AtomicLong totalSentRequests = new AtomicLong();
   private final AtomicLong totalReceivedRequests = new AtomicLong();
+  private Timer timer;
   private TimerTask txTimeoutTask = null;
   private volatile boolean running = true;
   private volatile boolean parsing = true;
@@ -919,6 +920,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
 
     try {
       if (txTimeoutTask != null) txTimeoutTask.cancel();
+      if (timer != null) timer.cancel();
       requestExecutor.shutdown();
       if (wait) {
         try {
@@ -1182,6 +1184,7 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
   }
 
   private void startTxTimeoutTimerTask() {
+    final long timeout = OGlobalConfiguration.DISTRIBUTED_TX_EXPIRE_TIMEOUT.getValueAsLong();
     txTimeoutTask =
         new TimerTask() {
           @Override
@@ -1189,8 +1192,6 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
             ODatabaseDocumentInternal database = null;
             try {
               final long now = System.currentTimeMillis();
-              final long timeout =
-                  OGlobalConfiguration.DISTRIBUTED_TX_EXPIRE_TIMEOUT.getValueAsLong();
 
               for (final Iterator<ODistributedTxContext> it = activeTxContexts.values().iterator();
                   it.hasNext(); ) {
@@ -1260,6 +1261,8 @@ public class ODistributedDatabaseImpl implements ODistributedDatabase {
             }
           }
         };
+    timer = new Timer("Distributed database tx expiry", true);
+    timer.scheduleAtFixedRate(txTimeoutTask, timeout / 3, timeout / 3);
   }
 
   private boolean isRunning() {
