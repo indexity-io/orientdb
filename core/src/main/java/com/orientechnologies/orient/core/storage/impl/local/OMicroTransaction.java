@@ -789,10 +789,11 @@ public final class OMicroTransaction implements OBasicTransaction, OTransactionI
   public void resetAllocatedIds() {
     for (Map.Entry<ORID, ORecordOperation> op : recordOperations.entrySet()) {
       if (op.getValue().type == ORecordOperation.CREATED) {
+        ORID lastCreateId = op.getValue().getRID().copy();
         ORecordId oldNew =
-            new ORecordId(op.getKey().getClusterId(), op.getKey().getClusterPosition());
-        updateIdentityAfterRecordCommit(op.getValue().getRID(), oldNew);
-        updatedRids.remove(op.getValue().getRID());
+            new ORecordId(lastCreateId.getClusterId(), op.getKey().getClusterPosition());
+        updateIdentityAfterCommit(lastCreateId, oldNew);
+        updatedRids.put(oldNew, op.getKey());
       }
     }
   }
