@@ -25,6 +25,7 @@ import com.orientechnologies.lucene.engine.OLuceneIndexEngine;
 import com.orientechnologies.lucene.engine.OLuceneIndexEngineAbstract;
 import com.orientechnologies.lucene.engine.OLuceneIndexEngineUtils;
 import com.orientechnologies.lucene.exception.OLuceneIndexException;
+import com.orientechnologies.lucene.functions.OLuceneFunctionsUtils;
 import com.orientechnologies.lucene.query.OLuceneQueryContext;
 import com.orientechnologies.lucene.tx.OLuceneTxChangesAbstract;
 import com.orientechnologies.orient.core.command.OCommandContext;
@@ -99,7 +100,9 @@ public class OLuceneResultSet {
 
     maxNumFragments = (int) Optional.ofNullable(highlight.get("maxNumFragments")).orElse(2);
 
-    this.returnedHits = topDocs.totalHits - deletedMatchCount;
+    final Long queryMaxHits = OLuceneFunctionsUtils.getResultLimit(queryContext.getContext());
+    long maxHits = (queryMaxHits == null) ? Integer.MAX_VALUE : queryMaxHits;
+    this.returnedHits = Math.min(maxHits, topDocs.totalHits - deletedMatchCount);
   }
 
   protected void fetchFirstBatch() {
@@ -149,7 +152,10 @@ public class OLuceneResultSet {
       localIndex = 0;
       scoreDocs = topDocs.scoreDocs;
       OLuceneIndexEngineUtils.sendTotalHits(
-          indexName, queryContext.getContext(), topDocs.totalHits - deletedMatchCount);
+          indexName,
+          queryContext.getContext(),
+          topDocs.totalHits - deletedMatchCount,
+          returnedHits);
     }
 
     @Override
