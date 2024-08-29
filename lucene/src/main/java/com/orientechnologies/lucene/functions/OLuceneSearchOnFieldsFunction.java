@@ -118,6 +118,7 @@ public class OLuceneSearchOnFieldsFunction extends OLuceneSearchFunctionTemplate
     if (index != null) {
 
       ODocument meta = getMetadata(args, ctx);
+      OLuceneFunctionsUtils.configureResultLimit(target, ctx, meta);
       return OStream.widen(
           index
               .getInternal()

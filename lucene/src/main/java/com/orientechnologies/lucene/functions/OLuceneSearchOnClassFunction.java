@@ -131,6 +131,7 @@ public class OLuceneSearchOnClassFunction extends OLuceneSearchFunctionTemplate 
     if (index != null) {
 
       ODocument metadata = getMetadata(args, ctx);
+      OLuceneFunctionsUtils.configureResultLimit(target, ctx, metadata);
 
       return OStream.widen(
           index
