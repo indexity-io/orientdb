@@ -120,6 +120,7 @@ public class OLuceneSearchOnClassFunction extends OLuceneSearchFunctionTemplate 
     if (index != null) {
 
       ODocument metadata = getMetadata(args, ctx);
+      OLuceneFunctionsUtils.configureResultLimit(target, ctx, metadata);
 
       List<OIdentifiable> luceneResultSet;
       try (Stream<ORID> rids =
