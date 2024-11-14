@@ -51,7 +51,7 @@ public class AggregateProjectionCalculationStep extends ProjectionCalculationSte
 
       @Override
       public boolean hasNext() {
-        if (localNext > nRecords || nextItem >= finalResults.size()) {
+        if (localNext >= nRecords || nextItem >= finalResults.size()) {
           return false;
         }
         return true;
@@ -59,7 +59,7 @@ public class AggregateProjectionCalculationStep extends ProjectionCalculationSte
 
       @Override
       public OResult next() {
-        if (localNext > nRecords || nextItem >= finalResults.size()) {
+        if (localNext >= nRecords || nextItem >= finalResults.size()) {
           throw new IllegalStateException();
         }
         OResult result = finalResults.get(nextItem);
