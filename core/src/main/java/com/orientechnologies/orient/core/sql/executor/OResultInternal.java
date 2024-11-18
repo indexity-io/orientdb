@@ -276,8 +276,9 @@ public class OResultInternal implements OResult, Comparable<OResultInternal> {
     if (element instanceof OElement) {
       return true;
     }
-    if (element.getRecord() instanceof OElement) {
-      return true;
+    if (element instanceof ORecordId) {
+      loadElement();
+      return element instanceof OElement;
     }
     return false;
   }
@@ -352,13 +353,21 @@ public class OResultInternal implements OResult, Comparable<OResultInternal> {
 
   @Override
   public boolean isBlob() {
-    return this.element != null && this.element.getRecord() instanceof OBlob;
+    if (this.element != null) {
+      if (this.element instanceof OBlob) {
+        return true;
+      } else if (this.element instanceof ORID) {
+        loadElement();
+        return this.element.getRecord() instanceof OBlob;
+      }
+    }
+    return false;
   }
 
   @Override
   public Optional<OBlob> getBlob() {
     if (isBlob()) {
-      return Optional.ofNullable(this.element.getRecord());
+      return Optional.ofNullable((OBlob) this.element);
     }
     return Optional.empty();
   }
