@@ -134,14 +134,13 @@ public class OProjection extends SimpleNode {
         continue;
       }
       if (item.isAll()) {
-        iRecord
-            .getElement()
-            .ifPresent(
-                (e) -> {
-                  if (e.getRecord() instanceof ODocument) {
-                    ((ODocument) e.getRecord()).deserializeFields();
-                  }
-                });
+        Optional<OElement> element = iRecord.getElement();
+        element.ifPresent(
+            (e) -> {
+              if (e.getRecord() instanceof ODocument) {
+                ((ODocument) e.getRecord()).deserializeFields();
+              }
+            });
         for (String alias : iRecord.getPropertyNames()) {
           if (this.excludes.contains(alias)) {
             continue;
@@ -152,8 +151,8 @@ public class OProjection extends SimpleNode {
           }
           result.setProperty(alias, val);
         }
-        if (iRecord.getElement().isPresent()) {
-          OElement x = iRecord.getElement().get();
+        if (element.isPresent()) {
+          OElement x = element.get();
           if (!this.excludes.contains("@rid")) {
             result.setProperty("@rid", x.getIdentity());
           }

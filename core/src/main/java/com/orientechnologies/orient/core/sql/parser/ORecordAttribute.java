@@ -89,9 +89,25 @@ public class ORecordAttribute extends SimpleNode {
                 return iCurrentRecord.getProperty(name);
               });
     } else if (name.equalsIgnoreCase("@version")) {
-      iCurrentRecord
+      return iCurrentRecord
           .getRecord()
           .map(r -> r.getVersion())
+          .orElseGet(
+              () -> {
+                return iCurrentRecord.getProperty(name);
+              });
+    } else if (name.equalsIgnoreCase("@type")) {
+      if (iCurrentRecord.isElement()) {
+        return "document";
+      } else if (iCurrentRecord.isBlob()) {
+        return "blog";
+      } else {
+        return "projection";
+      }
+    } else if (name.equalsIgnoreCase("@size")) {
+      return iCurrentRecord
+          .getRecord()
+          .map(r -> r.getSize())
           .orElseGet(
               () -> {
                 return iCurrentRecord.getProperty(name);
@@ -114,6 +130,11 @@ public class ORecordAttribute extends SimpleNode {
         return null;
       }
       return record.getVersion();
+    } else if (name.equalsIgnoreCase("@type")) {
+      return "document";
+
+    } else if (name.equalsIgnoreCase("@size")) {
+      return iCurrentRecord.getSize();
     }
     return null;
   }
