@@ -23,6 +23,7 @@ import static com.orientechnologies.common.util.OClassLoaderHelper.lookupProvide
 
 import com.orientechnologies.common.collection.OMultiCollectionIterator;
 import com.orientechnologies.common.collection.OMultiValue;
+import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.util.OCallable;
 import com.orientechnologies.common.util.OCollections;
@@ -91,7 +92,7 @@ public class OSQLEngine {
       List<OStatement> result = osql.parseScript();
       return result;
     } catch (ParseException e) {
-      throw new OCommandSQLParsingException(e, "");
+      throw OException.wrapException(new OCommandSQLParsingException(e, ""), e);
     }
   }
 
@@ -102,7 +103,7 @@ public class OSQLEngine {
       OOrBlock result = osql.OrBlock();
       return result;
     } catch (ParseException e) {
-      throw new OCommandSQLParsingException(e, "");
+      throw OException.wrapException(new OCommandSQLParsingException(e, ""), e);
     }
   }
 
@@ -113,7 +114,7 @@ public class OSQLEngine {
       OSecurityResourceSegment result = osql.SecurityResourceSegment();
       return result;
     } catch (ParseException e) {
-      throw new OCommandSQLParsingException(e, "");
+      throw OException.wrapException(new OCommandSQLParsingException(e, ""), e);
     }
   }
 
