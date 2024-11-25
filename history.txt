@@ -27,6 +27,26 @@
 This document contains the last changes of OrientDB Community Edition.
 
 
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+VERSION 3.2.36 - (November, 28 2024)
+- Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3236---28-November-2024
+
+
+# Core
+- Make sure to correctly evaluate return statements in insert and update statements
+- Correct rename of cluster to use every time lower case for low level structures
+- Re-add support for '&&' operator for lucene geo overlap operations in the new query engine
+- Removed multiple records load when checking if a result is a element
+- Handled correctly in condition with collections of collections, issue #10303
+- Re-add support of @type, @size record attributes and fixed @version, issue #10332
+- Minor fix in script executor retry logic
+
+# Remote 
+- make sure to refresh the version of the in context record in the client when updated with a server side query
+
+
 -----------------------------------------------------------------------------------------------------------------------------------
 VERSION 3.2.35 - (October, 29 2024)
 - Release Notes: https://github.com/orientechnologies/orientdb/wiki/OrientDB-3.2-Release-Notes#3235---29-October-2024
