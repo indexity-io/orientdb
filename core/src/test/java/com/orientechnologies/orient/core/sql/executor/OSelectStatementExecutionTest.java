@@ -1,6 +1,7 @@
 package com.orientechnologies.orient.core.sql.executor;
 
 import static com.orientechnologies.orient.core.sql.executor.ExecutionPlanPrintUtils.printExecutionPlan;
+import static org.junit.Assert.assertEquals;
 
 import com.orientechnologies.BaseMemoryDatabase;
 import com.orientechnologies.common.concur.OTimeoutException;
@@ -35,6 +36,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -4792,6 +4794,49 @@ public class OSelectStatementExecutionTest extends BaseMemoryDatabase {
         OResult result = resultSet.next();
         Assert.assertEquals((List) result.getProperty("name"), Arrays.asList("Buddy"));
       }
+    }
+  }
+
+  @Test
+  public void testContainsParamInMapInBrackets() {
+    OSchema schema = db.getMetadata().getSchema();
+    db.command("CREATE CLASS Entity EXTENDS V");
+    db.command("CREATE CLASS RelatedEntity EXTENDS V");
+    db.command("CREATE CLASS ConnectorEdge EXTENDS E");
+
+    OVertex entity1 = db.newVertex("Entity");
+    entity1.setProperty("name", "Entity1");
+    db.save(entity1);
+
+    OVertex entity2 = db.newVertex("Entity");
+    entity2.setProperty("name", "Entity2");
+    db.save(entity2);
+
+    OVertex relatedEntity1 = db.newVertex("RelatedEntity");
+    relatedEntity1.setProperty("name", "RelatedEntity1");
+    db.save(relatedEntity1);
+
+    OVertex relatedEntity2 = db.newVertex("RelatedEntity");
+    relatedEntity2.setProperty("name", "RelatedEntity2");
+    db.save(relatedEntity2);
+
+    final OEdge connectorEdge11 = entity1.addEdge(relatedEntity1, "ConnectorEdge");
+    final OEdge connectorEdge12 = entity1.addEdge(relatedEntity2, "ConnectorEdge");
+    final OEdge connectorEdge21 = entity2.addEdge(relatedEntity1, "ConnectorEdge");
+    db.save(connectorEdge11);
+    db.save(connectorEdge12);
+    db.save(connectorEdge21);
+
+    String query =
+        "SELECT * as result FROM Entity "
+            + " WHERE out('ConnectorEdge') contains [:relatedEntity2] ";
+    Map pars = new HashMap<>();
+    pars.put("relatedEntity2", relatedEntity2.getIdentity());
+    try (OResultSet rs = db.query(query, pars)) {
+      final List<OResult> results = rs.stream().collect(Collectors.toList());
+      assertEquals(1, results.size());
+      final ORID resultId = results.get(0).getIdentity().get();
+      assertEquals(entity1.getIdentity(), resultId);
     }
   }
 }
