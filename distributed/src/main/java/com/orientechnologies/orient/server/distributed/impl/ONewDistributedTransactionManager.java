@@ -231,7 +231,7 @@ public class ONewDistributedTransactionManager {
             throw new ORecordDuplicatedException(
                 String.format(
                     "Cannot index record %s: found duplicated key '%s' in index '%s' ",
-                    id, key, index),
+                    id, "<REDACTED>", index),
                 index,
                 id,
                 key);
@@ -363,7 +363,7 @@ public class ONewDistributedTransactionManager {
             throw new ORecordDuplicatedException(
                 String.format(
                     "Cannot index record %s: found duplicated key '%s' in index '%s' ",
-                    id, key, index),
+                    id, "<REDACTED>", index),
                 index,
                 id,
                 key);

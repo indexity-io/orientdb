@@ -875,7 +875,7 @@ public class ODatabaseDocumentDistributed extends ODatabaseDocumentEmbedded {
                 throw new ORecordDuplicatedException(
                     String.format(
                         "Cannot index record %s: found duplicated key '%s' in index '%s' previously assigned to the record %s",
-                        newValue, changesPerKey.key, getName(), old.getIdentity()),
+                        newValue, "<REDACTED>", getName(), old.getIdentity()),
                     getName(),
                     old.getIdentity(),
                     changesPerKey.key);
