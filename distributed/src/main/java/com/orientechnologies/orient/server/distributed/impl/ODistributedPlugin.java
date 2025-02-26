@@ -285,6 +285,16 @@ public class ODistributedPlugin extends OServerPluginAbstract
   @Override
   public void startup() {
     if (!enabled) return;
+    try {
+      final String delayEnv = System.getenv("HAZELCAST_PLUGIN_STARTUP_DELAY");
+      if (delayEnv != null) {
+        long delay = Long.parseLong(delayEnv);
+        OLogManager.instance().info(this, "Delaying HazelcastPlugin startup by '%d' ms", delay);
+        Thread.sleep(delay);
+      }
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
 
     // REGISTER TEMPORARY USER FOR REPLICATION PURPOSE
     serverInstance.addTemporaryUser(REPLICATOR_USER, "" + new SecureRandom().nextLong(), "*");
