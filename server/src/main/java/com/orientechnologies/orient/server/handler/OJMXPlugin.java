@@ -20,11 +20,17 @@
 
 package com.orientechnologies.orient.server.handler;
 
+import com.orientechnologies.common.directmemory.ODirectMemoryAllocator;
+import com.orientechnologies.common.directmemory.ODirectMemoryAllocatorMXBean;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.OConstants;
 import com.orientechnologies.orient.core.Orient;
+import com.orientechnologies.orient.core.engine.OEngine;
+import com.orientechnologies.orient.core.engine.local.OEngineLocalPaginated;
 import com.orientechnologies.orient.core.exception.OConfigurationException;
+import com.orientechnologies.orient.core.storage.cache.OReadCache;
+import com.orientechnologies.orient.core.storage.cache.OReadCacheMXBean;
 import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.config.OServerParameterConfiguration;
 import com.orientechnologies.orient.server.plugin.OServerPluginAbstract;
@@ -34,6 +40,8 @@ import javax.management.ObjectName;
 
 public class OJMXPlugin extends OServerPluginAbstract {
   private ObjectName onProfiler;
+  private ObjectName onReadCache;
+  private ObjectName onDirectMemoryAllocator;
   private boolean profilerManaged;
 
   public OJMXPlugin() {}
@@ -57,10 +65,32 @@ public class OJMXPlugin extends OServerPluginAbstract {
     try {
       if (profilerManaged) {
         // REGISTER THE PROFILER
-        onProfiler = new ObjectName("com.orientechnologies.common.profiler:type=OProfilerMXBean");
+        onProfiler = new ObjectName("com.orientechnologies:name=Profiler");
         if (mBeanServer.isRegistered(onProfiler)) mBeanServer.unregisterMBean(onProfiler);
         mBeanServer.registerMBean(Orient.instance().getProfiler(), onProfiler);
       }
+
+      // REGISTER THE READ CACHE
+      OEngine engine = Orient.instance().getEngine(OEngineLocalPaginated.NAME);
+      if (engine instanceof OEngineLocalPaginated) {
+        OEngineLocalPaginated localEngine = (OEngineLocalPaginated) engine;
+        OReadCache readCache = localEngine.getReadCache();
+        if (readCache instanceof OReadCacheMXBean) {
+          onReadCache = new ObjectName("com.orientechnologies:type=ReadCache");
+          if (mBeanServer.isRegistered(onReadCache)) mBeanServer.unregisterMBean(onReadCache);
+          mBeanServer.registerMBean((OReadCacheMXBean) readCache, onReadCache);
+          OLogManager.instance().info(this, "OrientDB Disc Cache MBean registered successfully");
+        }
+      }
+
+      // REGISTER THE DIRECT MEMORY ALLOCATOR
+      ODirectMemoryAllocatorMXBean directMemoryAllocator = ODirectMemoryAllocator.instance();
+      onDirectMemoryAllocator = new ObjectName("com.orientechnologies:type=DirectMemoryAllocator");
+      if (mBeanServer.isRegistered(onDirectMemoryAllocator))
+        mBeanServer.unregisterMBean(onDirectMemoryAllocator);
+      mBeanServer.registerMBean(directMemoryAllocator, onDirectMemoryAllocator);
+      OLogManager.instance()
+          .info(this, "OrientDB Direct Memory Allocator MBean registered successfully");
 
     } catch (Exception e) {
       throw OException.wrapException(
@@ -79,6 +109,23 @@ public class OJMXPlugin extends OServerPluginAbstract {
       MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
       if (onProfiler != null)
         if (mBeanServer.isRegistered(onProfiler)) mBeanServer.unregisterMBean(onProfiler);
+
+      // Unregister the read cache MBean
+      if (onReadCache != null) {
+        if (mBeanServer.isRegistered(onReadCache)) {
+          mBeanServer.unregisterMBean(onReadCache);
+          OLogManager.instance().info(this, "OrientDB Disc Cache MBean unregistered successfully");
+        }
+      }
+
+      // Unregister the direct memory allocator MBean
+      if (onDirectMemoryAllocator != null) {
+        if (mBeanServer.isRegistered(onDirectMemoryAllocator)) {
+          mBeanServer.unregisterMBean(onDirectMemoryAllocator);
+          OLogManager.instance()
+              .info(this, "OrientDB Direct Memory Allocator MBean unregistered successfully");
+        }
+      }
 
     } catch (Exception e) {
       OLogManager.instance()

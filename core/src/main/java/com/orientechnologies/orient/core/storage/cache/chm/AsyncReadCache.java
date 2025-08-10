@@ -8,12 +8,7 @@ import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.types.OModifiableBoolean;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.exception.OStorageException;
-import com.orientechnologies.orient.core.storage.cache.OAbstractWriteCache;
-import com.orientechnologies.orient.core.storage.cache.OCacheEntry;
-import com.orientechnologies.orient.core.storage.cache.OCacheEntryImpl;
-import com.orientechnologies.orient.core.storage.cache.OCachePointer;
-import com.orientechnologies.orient.core.storage.cache.OReadCache;
-import com.orientechnologies.orient.core.storage.cache.OWriteCache;
+import com.orientechnologies.orient.core.storage.cache.*;
 import com.orientechnologies.orient.core.storage.cache.chm.readbuffer.BoundedBuffer;
 import com.orientechnologies.orient.core.storage.cache.chm.readbuffer.Buffer;
 import com.orientechnologies.orient.core.storage.cache.chm.writequeue.MPSCLinkedQueue;
@@ -40,7 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * policy because it prevents usage of ghost entries and as result considerably decrease usage of
  * heap memory.
  */
-public final class AsyncReadCache implements OReadCache {
+public final class AsyncReadCache implements OReadCache, OReadCacheMXBean {
 
   private static final int N_CPU = Runtime.getRuntime().availableProcessors();
   private static final int WRITE_BUFFER_MAX_BATCH = 128 * ceilingPowerOfTwo(N_CPU);
@@ -479,6 +474,21 @@ public final class AsyncReadCache implements OReadCache {
   @Override
   public final long getUsedMemory() {
     return ((long) cacheSize.get()) * pageSize;
+  }
+
+  @Override
+  public long getTotalMemory() {
+    return (long) maxCacheSize * pageSize;
+  }
+
+  @Override
+  public long getRequests() {
+    return requests.longValue();
+  }
+
+  @Override
+  public long getHits() {
+    return hits.longValue();
   }
 
   @Override
