@@ -110,7 +110,7 @@ public class OEngineLocalPaginated extends OEngineAbstract {
       pages.clear();
     }
 
-    readCache = new AsyncReadCache(OByteBufferPool.instance(null), diskCacheSize, pageSize, false);
+    readCache = new AsyncReadCache(OByteBufferPool.instance(null), diskCacheSize, pageSize, true);
   }
 
   private static long calculateReadCacheMaxMemory(final long cacheSize) {
