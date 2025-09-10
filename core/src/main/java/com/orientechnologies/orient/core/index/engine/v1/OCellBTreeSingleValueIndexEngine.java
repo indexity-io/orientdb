@@ -247,6 +247,11 @@ public final class OCellBTreeSingleValueIndexEngine
   }
 
   @Override
+  public long getFileSize() throws IOException {
+    return sbTree.getFileSize();
+  }
+
+  @Override
   public boolean hasRangeQuerySupport() {
     return true;
   }

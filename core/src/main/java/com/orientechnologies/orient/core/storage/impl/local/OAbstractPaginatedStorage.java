@@ -1292,6 +1292,33 @@ public abstract class OAbstractPaginatedStorage
   }
 
   @Override
+  public long getClusterFileSizeById(int clusterId) {
+    try {
+      stateLock.readLock().lock();
+      try {
+
+        checkOpennessAndMigration();
+
+        checkClusterId(clusterId);
+        final OCluster cluster = clusters.get(clusterId);
+        if (cluster == null) {
+          throwClusterDoesNotExist(clusterId);
+        }
+
+        return cluster.getFileSize();
+      } finally {
+        stateLock.readLock().unlock();
+      }
+    } catch (final RuntimeException ee) {
+      throw logAndPrepareForRethrow(ee, false);
+    } catch (final Error ee) {
+      throw logAndPrepareForRethrow(ee, false);
+    } catch (final Throwable t) {
+      throw logAndPrepareForRethrow(t, false);
+    }
+  }
+
+  @Override
   public long getClusterRecordsSizeByName(String clusterName) {
     Objects.requireNonNull(clusterName);
 

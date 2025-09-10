@@ -378,6 +378,11 @@ final class OAtomicOperationBinaryTracking implements OAtomicOperation {
   }
 
   @Override
+  public long getFileSize(String fileName) throws IOException {
+    return writeCache.getFileSize(fileName);
+  }
+
+  @Override
   public String fileNameById(long fileId) {
     fileId = checkFileIdCompatibility(fileId, storageId);
 

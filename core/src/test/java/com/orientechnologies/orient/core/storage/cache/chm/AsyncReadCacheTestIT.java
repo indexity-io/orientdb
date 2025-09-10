@@ -396,6 +396,11 @@ public class AsyncReadCacheTestIT {
     }
 
     @Override
+    public long getFileSize(String fileName) throws IOException {
+      return 0;
+    }
+
+    @Override
     public void restoreModeOn() {}
 
     @Override

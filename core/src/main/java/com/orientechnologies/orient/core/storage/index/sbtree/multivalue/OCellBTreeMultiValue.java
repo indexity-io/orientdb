@@ -35,6 +35,8 @@ public interface OCellBTreeMultiValue<K> {
 
   long size();
 
+  long getFileSize() throws IOException;
+
   boolean remove(OAtomicOperation atomicOperation, K key, ORID value) throws IOException;
 
   Stream<ORawPair<K, ORID>> iterateEntriesMinor(K key, boolean inclusive, boolean ascSortOrder);

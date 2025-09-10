@@ -519,6 +519,17 @@ public final class OCellBTreeMultiValueIndexEngine
     return svTreeEntries();
   }
 
+  @Override
+  public long getFileSize() throws IOException {
+    if (mvTree != null) {
+      return mvTree.getFileSize();
+    }
+
+    assert svTree != null;
+    assert nullTree != null;
+    return svTree.getFileSize() + nullTree.getFileSize();
+  }
+
   private long mvTreeSize(final IndexEngineValuesTransformer transformer) {
     assert mvTree != null;
 

@@ -375,6 +375,10 @@ TOKEN:
     |
     < SERVER: ( "S" | "s") ( "E" | "e") ( "R" | "r") ( "V" | "v") ( "E" | "e") ( "R" | "r") >
     |
+    < DB: ( "D" | "d") ( "B" | "b") >
+    |
+    < SIZE: ( "S" | "s") ( "I" | "i") ( "Z" | "z") ( "E" | "e") >
+    |
     < SYNC: ( "S" | "s") ( "Y" | "y") ( "N" | "n") ( "C" | "c") >
 	|
 	< EXISTS: ( "E" | "e" ) ( "X" | "x" ) ( "i" | "I" ) ( "s" | "S" ) ( "t" | "T" ) ( "s" | "S" ) >
@@ -961,6 +965,10 @@ OIdentifier Identifier():
     token = <SYSTEM>
     |
     quotedToken = <QUOTED_IDENTIFIER>
+    |
+    token = <DB>
+    |
+    token = <SIZE>
 ) {
 
     if(token!=null){
@@ -1231,6 +1239,9 @@ OStatement StatementInternal():
                 |
                 LOOKAHEAD(2)
                 result = HaSetStatement()
+                |
+                LOOKAHEAD(2)
+                result = DBSizeStatement()
             )
         )
         |
@@ -5259,6 +5270,30 @@ OHaSetStatement HaSetStatement():
         jjtThis.key = Expression()
         <EQ>
         jjtThis.value = Expression()
+    )
+    { return jjtThis; }
+}
+
+ODBSizeStatement DBSizeStatement():
+{
+ Token token;
+}
+{
+    (
+        <DB> <SIZE>
+        (
+            token = "-indexes" { jjtThis.indexes = true; }
+            |
+            token = "-" <CLASSES> { jjtThis.classes = true; }
+            |
+            token = "-clusters" { jjtThis.clusters = true; }
+            |
+            token = "-all" {
+                jjtThis.indexes = true;
+                jjtThis.classes = true;
+                jjtThis.clusters = true;
+            }
+        )*
     )
     { return jjtThis; }
 }

@@ -80,6 +80,8 @@ public interface OWriteCache {
 
   boolean exists(long fileId);
 
+  long getFileSize(String fileName) throws IOException;
+
   void restoreModeOn() throws IOException;
 
   void restoreModeOff();

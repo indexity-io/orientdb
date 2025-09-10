@@ -53,11 +53,7 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
@@ -65,6 +61,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
@@ -575,6 +572,38 @@ public abstract class OLuceneIndexEngineAbstract implements OLuceneIndexEngine {
 
   public long size(final IndexEngineValuesTransformer transformer) {
     return sizeInTx(null);
+  }
+
+  @Override
+  public long getFileSize() {
+    updateLastAccess();
+    openIfClosed();
+    IndexSearcher searcher = searcher();
+    try {
+      IndexReader reader = searcher.getIndexReader();
+      if (reader instanceof DirectoryReader) {
+        DirectoryReader directoryReader = (DirectoryReader) reader;
+        try {
+          return Arrays.stream(directoryReader.directory().listAll())
+              .mapToLong(
+                  file -> {
+                    try {
+                      return directoryReader.directory().fileLength(file);
+                    } catch (IOException e) {
+                      return 0;
+                    }
+                  })
+              .sum();
+        } catch (IOException e) {
+          return 0;
+        }
+      } else {
+        return 0;
+      }
+    } finally {
+
+      release(searcher);
+    }
   }
 
   @Override

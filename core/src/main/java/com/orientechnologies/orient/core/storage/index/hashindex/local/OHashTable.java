@@ -86,6 +86,8 @@ public interface OHashTable<K, V> {
 
   long size();
 
+  long getFileSize() throws IOException;
+
   void close();
 
   void delete(OAtomicOperation atomicOperation) throws IOException;

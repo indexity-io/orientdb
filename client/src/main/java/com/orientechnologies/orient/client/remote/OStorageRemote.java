@@ -1465,6 +1465,11 @@ public class OStorageRemote implements OStorageProxy, ORemotePushHandler, OStora
     throw new UnsupportedOperationException();
   }
 
+  @Override
+  public long getClusterFileSizeById(int clusterId) {
+    throw new UnsupportedOperationException();
+  }
+
   public long getClusterRecordsSizeByName(String clusterName) {
     throw new UnsupportedOperationException();
   }
