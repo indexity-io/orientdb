@@ -362,6 +362,18 @@ public final class OAutoShardingIndexEngine implements OIndexEngine {
   }
 
   @Override
+  public long getFileSize() throws IOException {
+    long size = 0;
+
+    if (partitions != null) {
+      for (OHashTable<Object, Object> p : partitions) {
+        size += p.getFileSize();
+      }
+    }
+    return size;
+  }
+
+  @Override
   public boolean hasRangeQuerySupport() {
     return false;
   }

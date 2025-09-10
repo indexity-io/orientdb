@@ -152,6 +152,8 @@ public interface OStorage extends OBackupable, OStorageInfo {
 
   long getClusterRecordsSizeById(final int clusterId);
 
+  long getClusterFileSizeById(final int clusterId);
+
   long getClusterRecordsSizeByName(final String clusterName);
 
   String getClusterRecordConflictStrategy(final int clusterId);

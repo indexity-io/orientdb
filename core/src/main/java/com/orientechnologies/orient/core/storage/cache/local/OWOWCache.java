@@ -931,6 +931,27 @@ public final class OWOWCache extends OAbstractWriteCache
   }
 
   @Override
+  public long getFileSize(final String fileName) {
+    filesLock.acquireReadLock();
+    try {
+      checkForClose();
+
+      final Integer intId = nameIdMap.get(fileName);
+      if (intId != null && intId >= 0) {
+        final OFile fileClassic = files.get(externalFileId(intId));
+
+        if (fileClassic == null) {
+          return 0;
+        }
+        return fileClassic.getFileSize();
+      }
+      return 0;
+    } finally {
+      filesLock.releaseReadLock();
+    }
+  }
+
+  @Override
   public void restoreModeOn() throws IOException {
     filesLock.acquireWriteLock();
     try {

@@ -211,6 +211,11 @@ public class OOfflineCluster implements OCluster {
   }
 
   @Override
+  public long getFileSize() throws IOException {
+    return 0;
+  }
+
+  @Override
   public String compression() {
     return null;
   }

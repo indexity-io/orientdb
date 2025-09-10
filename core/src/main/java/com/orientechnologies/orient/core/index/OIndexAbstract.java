@@ -364,6 +364,28 @@ public abstract class OIndexAbstract implements OIndexInternal {
     }
   }
 
+  @Override
+  public final long getFileSize() {
+    while (true) {
+      try {
+        return storage
+            .callIndexEngine(
+                false,
+                indexId,
+                oBaseIndexEngine -> {
+                  try {
+                    return oBaseIndexEngine.getFileSize();
+                  } catch (IOException e) {
+                    return 0;
+                  }
+                })
+            .longValue();
+      } catch (OInvalidIndexEngineIdException e) {
+        doReloadIndexEngine();
+      }
+    }
+  }
+
   /** Flushes in-memory changes to disk. */
   @Deprecated
   public void flush() {

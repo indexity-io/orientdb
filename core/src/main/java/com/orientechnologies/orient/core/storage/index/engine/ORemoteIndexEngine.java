@@ -150,6 +150,11 @@ public class ORemoteIndexEngine implements OIndexEngine {
   }
 
   @Override
+  public long getFileSize() throws IOException {
+    return 0;
+  }
+
+  @Override
   public boolean hasRangeQuerySupport() {
     return false;
   }

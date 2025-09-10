@@ -134,6 +134,8 @@ public interface OIndexInternal extends OIndex {
   /** @return number of entries in the index. */
   long size();
 
+  long getFileSize();
+
   Stream<ORID> getRids(final Object key);
 
   Stream<ORawPair<Object, ORID>> stream();

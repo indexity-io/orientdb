@@ -594,6 +594,11 @@ public class OChainedIndexProxy<T> implements OIndexInternal {
     throw new UnsupportedOperationException("Not allowed operation");
   }
 
+  @Override
+  public long getFileSize() {
+    return 0;
+  }
+
   public OIndex delete() {
     throw new UnsupportedOperationException("Not allowed operation");
   }

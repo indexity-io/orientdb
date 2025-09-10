@@ -211,6 +211,11 @@ public class OLuceneSpatialIndexEngineDelegator
   }
 
   @Override
+  public long getFileSize() throws IOException {
+    return delegate.getFileSize();
+  }
+
+  @Override
   public boolean hasRangeQuerySupport() {
     return delegate.hasRangeQuerySupport();
   }
