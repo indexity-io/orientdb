@@ -341,6 +341,11 @@ public class OSBTreeIndexEngine implements OIndexEngine {
   }
 
   @Override
+  public long getFileSize() throws IOException {
+    return sbTree.getFileSize();
+  }
+
+  @Override
   public boolean hasRangeQuerySupport() {
     return true;
   }

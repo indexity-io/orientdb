@@ -431,6 +431,22 @@ public final class ODirectMemoryOnlyDiskCache extends OAbstractWriteCache
   }
 
   @Override
+  public long getFileSize(String fileName) throws IOException {
+    metadataLock.lock();
+    try {
+      final Integer fileId = fileNameIdMap.get(fileName);
+      if (fileId == null) {
+        return 0;
+      }
+
+      final MemoryFile memoryFile = files.get(fileId);
+      return (memoryFile == null) ? 0 : memoryFile.getUsedMemory();
+    } finally {
+      metadataLock.unlock();
+    }
+  }
+
+  @Override
   public void restoreModeOn() {}
 
   @Override

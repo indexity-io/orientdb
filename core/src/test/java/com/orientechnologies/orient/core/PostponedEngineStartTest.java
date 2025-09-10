@@ -379,6 +379,11 @@ public class PostponedEngineStartTest {
         }
 
         @Override
+        public long getClusterFileSizeById(int clusterId) {
+          return 0;
+        }
+
+        @Override
         public long getClusterRecordsSizeByName(String clusterName) {
           return 0;
         }

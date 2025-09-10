@@ -55,6 +55,8 @@ public interface OSBTree<K, V> {
 
   long size();
 
+  long getFileSize() throws IOException;
+
   V remove(OAtomicOperation atomicOperation, K key) throws IOException;
 
   Stream<ORawPair<K, V>> iterateEntriesMinor(K key, boolean inclusive, boolean ascSortOrder);

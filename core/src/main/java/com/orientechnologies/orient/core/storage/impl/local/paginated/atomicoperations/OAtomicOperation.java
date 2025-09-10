@@ -39,6 +39,8 @@ public interface OAtomicOperation {
 
   boolean isFileExists(String fileName);
 
+  long getFileSize(String fileName) throws IOException;
+
   String fileNameById(long fileId);
 
   long fileIdByName(String name);

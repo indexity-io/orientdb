@@ -198,14 +198,15 @@ public interface OrientSqlTreeConstants {
   public int JJTHASYNCDATABASESTATEMENT = 193;
   public int JJTHASYNCCLUSTERSTATEMENT = 194;
   public int JJTHASETSTATEMENT = 195;
-  public int JJTFOREACHBLOCK = 196;
-  public int JJTWHILEBLOCK = 197;
-  public int JJTSECURITYRESOURCESEGMENT = 198;
-  public int JJTCREATESECURITYPOLICYSTATEMENT = 199;
-  public int JJTALTERSECURITYPOLICYSTATEMENT = 200;
-  public int JJTDATABASEUSERDATA = 201;
-  public int JJTCREATEDATABASESTATEMENT = 202;
-  public int JJTDROPDATABASESTATEMENT = 203;
+  public int JJTDBSIZESTATEMENT = 196;
+  public int JJTFOREACHBLOCK = 197;
+  public int JJTWHILEBLOCK = 198;
+  public int JJTSECURITYRESOURCESEGMENT = 199;
+  public int JJTCREATESECURITYPOLICYSTATEMENT = 200;
+  public int JJTALTERSECURITYPOLICYSTATEMENT = 201;
+  public int JJTDATABASEUSERDATA = 202;
+  public int JJTCREATEDATABASESTATEMENT = 203;
+  public int JJTDROPDATABASESTATEMENT = 204;
 
   public String[] jjtNodeName = {
     "Rid",
@@ -404,6 +405,7 @@ public interface OrientSqlTreeConstants {
     "HaSyncDatabaseStatement",
     "HaSyncClusterStatement",
     "HaSetStatement",
+    "DBSizeStatement",
     "ForEachBlock",
     "WhileBlock",
     "SecurityResourceSegment",
@@ -414,4 +416,4 @@ public interface OrientSqlTreeConstants {
     "DropDatabaseStatement",
   };
 }
-/* JavaCC - OriginalChecksum=c164250282f15d30957b0ee13a58f952 (do not edit this line) */
+/* JavaCC - OriginalChecksum=90629a098f65855bc45b24bef48aa07a (do not edit this line) */

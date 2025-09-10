@@ -28,6 +28,7 @@ import com.orientechnologies.orient.core.storage.ORawBuffer;
 import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.impl.local.OClusterBrowsePage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperation;
+import java.io.IOException;
 
 /**
  * Remote cluster implementation
@@ -196,6 +197,11 @@ public class OClusterRemote implements OCluster {
 
   public long getRecordsSize() {
     throw new UnsupportedOperationException("getRecordsSize()");
+  }
+
+  @Override
+  public long getFileSize() throws IOException {
+    throw new UnsupportedOperationException("getFileSize()");
   }
 
   @Override

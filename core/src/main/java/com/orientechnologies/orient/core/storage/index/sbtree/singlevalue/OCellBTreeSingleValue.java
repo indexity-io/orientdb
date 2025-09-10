@@ -40,6 +40,8 @@ public interface OCellBTreeSingleValue<K> {
 
   long size();
 
+  long getFileSize() throws IOException;
+
   ORID remove(OAtomicOperation atomicOperation, K key) throws IOException;
 
   Stream<ORawPair<K, ORID>> iterateEntriesMinor(K key, boolean inclusive, boolean ascSortOrder);

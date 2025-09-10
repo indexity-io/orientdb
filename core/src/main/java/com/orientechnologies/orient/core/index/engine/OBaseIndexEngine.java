@@ -53,6 +53,8 @@ public interface OBaseIndexEngine {
 
   long size(IndexEngineValuesTransformer transformer);
 
+  long getFileSize() throws IOException;
+
   boolean hasRangeQuerySupport();
 
   int getEngineAPIVersion();

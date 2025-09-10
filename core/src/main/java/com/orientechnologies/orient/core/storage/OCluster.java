@@ -132,6 +132,8 @@ public interface OCluster {
   /** Returns the size of the records contained in the cluster in bytes. */
   long getRecordsSize() throws IOException;
 
+  long getFileSize() throws IOException;
+
   String compression();
 
   boolean isSystemCluster();

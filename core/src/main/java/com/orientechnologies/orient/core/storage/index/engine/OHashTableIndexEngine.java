@@ -318,6 +318,11 @@ public final class OHashTableIndexEngine implements OIndexEngine {
   }
 
   @Override
+  public long getFileSize() throws IOException {
+    return hashTable.getFileSize();
+  }
+
+  @Override
   public boolean hasRangeQuerySupport() {
     return false;
   }

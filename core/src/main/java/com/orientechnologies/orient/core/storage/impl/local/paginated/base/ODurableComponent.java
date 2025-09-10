@@ -193,6 +193,24 @@ public abstract class ODurableComponent extends OSharedResourceAbstract {
     return atomicOperation.isFileExists(fileName);
   }
 
+  public long getFileSize() throws IOException {
+    atomicOperationsManager.acquireReadLock(this);
+    try {
+      acquireSharedLock();
+      try {
+        final OAtomicOperation atomicOperation = atomicOperationsManager.getCurrentOperation();
+        if (atomicOperation == null) {
+          return writeCache.getFileSize(getFullName());
+        }
+        return atomicOperation.getFileSize(getFullName());
+      } finally {
+        releaseSharedLock();
+      }
+    } finally {
+      atomicOperationsManager.releaseReadLock(this);
+    }
+  }
+
   protected void truncateFile(final OAtomicOperation atomicOperation, final long filedId)
       throws IOException {
     assert atomicOperation != null;
