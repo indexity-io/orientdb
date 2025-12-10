@@ -24,6 +24,7 @@ import com.orientechnologies.common.comparator.ODefaultComparator;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
 import com.orientechnologies.common.serialization.types.OIntegerSerializer;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.encryption.OEncryption;
@@ -54,7 +55,6 @@ import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * This is implementation which is based on B+-tree implementation threaded tree. The main
@@ -660,20 +660,20 @@ public final class OSBTreeV1<K, V> extends ODurableComponent
       final K key, final boolean inclusive, final boolean ascSortOrder) {
 
     if (!ascSortOrder) {
-      return StreamSupport.stream(iterateEntriesMinorDesc(key, inclusive), false);
+      return OStream.stream(iterateEntriesMinorDesc(key, inclusive));
     }
 
-    return StreamSupport.stream(iterateEntriesMinorAsc(key, inclusive), false);
+    return OStream.stream(iterateEntriesMinorAsc(key, inclusive));
   }
 
   @Override
   public Stream<ORawPair<K, V>> iterateEntriesMajor(
       final K key, final boolean inclusive, final boolean ascSortOrder) {
     if (ascSortOrder) {
-      return StreamSupport.stream(iterateEntriesMajorAsc(key, inclusive), false);
+      return OStream.stream(iterateEntriesMajorAsc(key, inclusive));
     }
 
-    return StreamSupport.stream(iterateEntriesMajorDesc(key, inclusive), false);
+    return OStream.stream(iterateEntriesMajorDesc(key, inclusive));
   }
 
   @Override
@@ -746,11 +746,10 @@ public final class OSBTreeV1<K, V> extends ODurableComponent
         final OAtomicOperation atomicOperation = atomicOperationsManager.getCurrentOperation();
         final BucketSearchResult searchResult = firstItem(atomicOperation);
         if (searchResult == null) {
-          return StreamSupport.stream(Spliterators.emptySpliterator(), false);
+          return OStream.stream(Spliterators.emptySpliterator());
         }
 
-        return StreamSupport.stream(
-            new OSBTreeFullKeyCursor(searchResult.getLastPathItem()), false);
+        return OStream.stream(new OSBTreeFullKeyCursor(searchResult.getLastPathItem()));
       } finally {
         releaseSharedLock();
       }
@@ -773,11 +772,11 @@ public final class OSBTreeV1<K, V> extends ODurableComponent
       final boolean ascSortOrder) {
 
     if (ascSortOrder) {
-      return StreamSupport.stream(
-          iterateEntriesBetweenAscOrder(keyFrom, fromInclusive, keyTo, toInclusive), false);
+      return OStream.stream(
+          iterateEntriesBetweenAscOrder(keyFrom, fromInclusive, keyTo, toInclusive));
     } else {
-      return StreamSupport.stream(
-          iterateEntriesBetweenDescOrder(keyFrom, fromInclusive, keyTo, toInclusive), false);
+      return OStream.stream(
+          iterateEntriesBetweenDescOrder(keyFrom, fromInclusive, keyTo, toInclusive));
     }
   }
 

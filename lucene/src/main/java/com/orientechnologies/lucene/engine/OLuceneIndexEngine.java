@@ -25,7 +25,7 @@ import com.orientechnologies.orient.core.id.OContextualRecordId;
 import com.orientechnologies.orient.core.index.engine.OIndexEngine;
 import com.orientechnologies.orient.core.storage.impl.local.OFreezableStorageComponent;
 import java.io.IOException;
-import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
@@ -56,7 +56,7 @@ public interface OLuceneIndexEngine extends OIndexEngine, OFreezableStorageCompo
 
   void release(IndexSearcher searcher);
 
-  Set<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes);
+  Stream<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes);
 
   long sizeInTx(OLuceneTxChanges changes);
 

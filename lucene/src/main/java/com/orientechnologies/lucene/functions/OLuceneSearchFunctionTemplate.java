@@ -1,6 +1,5 @@
 package com.orientechnologies.lucene.functions;
 
-import com.orientechnologies.lucene.collections.OLuceneResultSet;
 import com.orientechnologies.lucene.index.OLuceneFullTextIndex;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -11,6 +10,7 @@ import com.orientechnologies.orient.core.sql.parser.OBinaryCompareOperator;
 import com.orientechnologies.orient.core.sql.parser.OExpression;
 import com.orientechnologies.orient.core.sql.parser.OFromClause;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /** Created by frank on 25/05/2017. */
 public abstract class OLuceneSearchFunctionTemplate extends OSQLFunctionAbstract
@@ -58,17 +58,9 @@ public abstract class OLuceneSearchFunctionTemplate extends OSQLFunctionAbstract
       Object rightValue,
       OCommandContext ctx,
       OExpression... args) {
-
-    Iterable<OIdentifiable> a = searchFromTarget(target, operator, rightValue, ctx, args);
-    if (a instanceof OLuceneResultSet) {
-      return ((OLuceneResultSet) a).size();
+    try (Stream<OIdentifiable> result = searchFromTarget(target, operator, rightValue, ctx, args)) {
+      return (result == null) ? -1 : result.count();
     }
-    long count = 0;
-    for (Object o : a) {
-      count++;
-    }
-
-    return count;
   }
 
   protected ODocument getMetadata(OExpression metadata, OCommandContext ctx) {

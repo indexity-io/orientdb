@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OFunctionCall extends SimpleNode {
 
@@ -200,7 +201,7 @@ public class OFunctionCall extends SimpleNode {
    * @param rightValue
    * @return
    */
-  public Iterable<OIdentifiable> executeIndexedFunction(
+  public Stream<OIdentifiable> executeIndexedFunction(
       OFromClause target, OCommandContext ctx, OBinaryCompareOperator operator, Object rightValue) {
     OSQLFunction function = OSQLEngine.getInstance().getFunction(name.getStringValue());
     if (function instanceof OIndexableSQLFunction) {

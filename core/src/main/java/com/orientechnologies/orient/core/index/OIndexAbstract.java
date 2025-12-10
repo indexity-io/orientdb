@@ -641,6 +641,7 @@ public abstract class OIndexAbstract implements OIndexInternal {
               while (iterator.hasNext()) {
                 ORawPair<Object, ORID> pair = iterator.next();
                 remove(pair.first, pair.second);
+                // FIXME
                 if (count % 1000 == 0) {
                   database.commit();
                   database.begin();

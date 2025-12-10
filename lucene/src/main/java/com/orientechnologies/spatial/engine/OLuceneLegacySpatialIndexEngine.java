@@ -44,7 +44,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
@@ -73,7 +73,8 @@ public class OLuceneLegacySpatialIndexEngine extends OLuceneSpatialIndexEngineAb
     super(storage, indexName, id, factory);
   }
 
-  private Set<OIdentifiable> legacySearch(Object key, OLuceneTxChanges changes) throws IOException {
+  private Stream<OIdentifiable> legacySearch(Object key, OLuceneTxChanges changes)
+      throws IOException {
     if (key instanceof OSpatialCompositeKey) {
       final OSpatialCompositeKey newKey = (OSpatialCompositeKey) key;
 
@@ -91,7 +92,7 @@ public class OLuceneLegacySpatialIndexEngine extends OLuceneSpatialIndexEngineAb
     throw new OIndexEngineException("Unknown key" + key, null);
   }
 
-  private Set<OIdentifiable> searchIntersect(
+  private Stream<OIdentifiable> searchIntersect(
       OCompositeKey key, double distance, OCommandContext context, OLuceneTxChanges changes)
       throws IOException {
 
@@ -125,10 +126,10 @@ public class OLuceneLegacySpatialIndexEngine extends OLuceneSpatialIndexEngineAb
         new OSpatialQueryContext(context, searcher, q, Arrays.asList(distSort.getSort()))
             .setSpatialArgs(args)
             .withChanges(changes);
-    return new OLuceneResultSet(this, queryContext, EMPTY_METADATA);
+    return new OLuceneResultSet(this, queryContext, EMPTY_METADATA).stream();
   }
 
-  private Set<OIdentifiable> searchWithin(
+  private Stream<OIdentifiable> searchWithin(
       OSpatialCompositeKey key, OCommandContext context, OLuceneTxChanges changes) {
 
     Shape shape = legacyBuilder.makeShape(key, ctx);
@@ -147,7 +148,7 @@ public class OLuceneLegacySpatialIndexEngine extends OLuceneSpatialIndexEngineAb
     OLuceneQueryContext queryContext =
         new OSpatialQueryContext(context, searcher, query).withChanges(changes);
 
-    return new OLuceneResultSet(this, queryContext, EMPTY_METADATA);
+    return new OLuceneResultSet(this, queryContext, EMPTY_METADATA).stream();
   }
 
   @Override
@@ -172,7 +173,7 @@ public class OLuceneLegacySpatialIndexEngine extends OLuceneSpatialIndexEngineAb
   }
 
   @Override
-  public Set<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes) {
+  public Stream<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes) {
     try {
       updateLastAccess();
       openIfClosed();

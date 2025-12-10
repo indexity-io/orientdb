@@ -22,6 +22,7 @@ package com.orientechnologies.orient.core.storage.index.engine;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.IndexEngineData;
 import com.orientechnologies.orient.core.encryption.OEncryption;
@@ -42,7 +43,6 @@ import com.orientechnologies.orient.core.storage.index.versionmap.OVersionPositi
 import java.io.IOException;
 import java.util.Spliterators;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * @author Andrey Lomakin (a.lomakin-at-orientdb.com)
@@ -206,7 +206,7 @@ public class OSBTreeIndexEngine implements OIndexEngine {
   public Stream<ORawPair<Object, ORID>> stream(IndexEngineValuesTransformer valuesTransformer) {
     final Object firstKey = sbTree.firstKey();
     if (firstKey == null) {
-      return StreamSupport.stream(Spliterators.emptySpliterator(), false);
+      return OStream.empty();
     }
     return convertTreeStreamToIndexStream(
         valuesTransformer, sbTree.iterateEntriesMajor(firstKey, true, true));
@@ -220,7 +220,7 @@ public class OSBTreeIndexEngine implements OIndexEngine {
       //noinspection resource
       return treeStream.flatMap(
           (entry) ->
-              valuesTransformer.transformFromValue(entry.second).stream()
+              OStream.stream(valuesTransformer.transformFromValue(entry.second))
                   .map((rid) -> new ORawPair<>(entry.first, rid)));
     }
   }
@@ -229,7 +229,7 @@ public class OSBTreeIndexEngine implements OIndexEngine {
   public Stream<ORawPair<Object, ORID>> descStream(IndexEngineValuesTransformer valuesTransformer) {
     final Object lastKey = sbTree.lastKey();
     if (lastKey == null) {
-      return StreamSupport.stream(Spliterators.emptySpliterator(), false);
+      return OStream.stream(Spliterators.emptySpliterator());
     }
 
     return convertTreeStreamToIndexStream(

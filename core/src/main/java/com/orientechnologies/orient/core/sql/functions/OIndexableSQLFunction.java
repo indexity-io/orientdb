@@ -24,6 +24,7 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.sql.parser.OBinaryCompareOperator;
 import com.orientechnologies.orient.core.sql.parser.OExpression;
 import com.orientechnologies.orient.core.sql.parser.OFromClause;
+import java.util.stream.Stream;
 
 /**
  * This interface represents SQL functions whose implementation can rely on an index. If used in a
@@ -49,7 +50,7 @@ public interface OIndexableSQLFunction extends OSQLFunction {
    * @return an iterable of records that match the condition; null means that the execution could
    *     not be performed for some reason.
    */
-  public Iterable<OIdentifiable> searchFromTarget(
+  public Stream<OIdentifiable> searchFromTarget(
       OFromClause target,
       OBinaryCompareOperator operator,
       Object rightValue,

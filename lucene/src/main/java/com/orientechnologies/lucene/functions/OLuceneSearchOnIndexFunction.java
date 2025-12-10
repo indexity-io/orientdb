@@ -1,5 +1,6 @@
 package com.orientechnologies.lucene.functions;
 
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.lucene.builder.OLuceneQueryBuilder;
 import com.orientechnologies.lucene.collections.OLuceneCompositeKey;
 import com.orientechnologies.lucene.index.OLuceneFullTextIndex;
@@ -18,7 +19,6 @@ import com.orientechnologies.orient.core.sql.parser.OFromClause;
 import com.orientechnologies.orient.core.sql.parser.OFromItem;
 import com.orientechnologies.orient.core.sql.parser.OIdentifier;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -115,7 +115,7 @@ public class OLuceneSearchOnIndexFunction extends OLuceneSearchFunctionTemplate 
   }
 
   @Override
-  public Iterable<OIdentifiable> searchFromTarget(
+  public Stream<OIdentifiable> searchFromTarget(
       OFromClause target,
       OBinaryCompareOperator operator,
       Object rightValue,
@@ -130,19 +130,14 @@ public class OLuceneSearchOnIndexFunction extends OLuceneSearchFunctionTemplate 
 
       ODocument meta = getMetadata(args, ctx);
 
-      List<OIdentifiable> luceneResultSet;
-      try (Stream<ORID> rids =
+      return OStream.widen(
           index
               .getInternal()
               .getRids(
                   new OLuceneKeyAndMetadata(
-                      new OLuceneCompositeKey(Arrays.asList(query)).setContext(ctx), meta))) {
-        luceneResultSet = rids.collect(Collectors.toList());
-      }
-
-      return luceneResultSet;
+                      new OLuceneCompositeKey(Arrays.asList(query)).setContext(ctx), meta)));
     }
-    return Collections.emptyList();
+    return OStream.empty();
   }
 
   private ODocument getMetadata(OExpression[] args, OCommandContext ctx) {

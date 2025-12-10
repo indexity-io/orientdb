@@ -243,6 +243,7 @@ public class OWhereClause extends SimpleNode {
     }
     if (key != null) {
       final Object iteratorKey = key;
+      // FIXME: Stream close
       return () -> index.getInternal().getRids(iteratorKey).iterator();
     }
     return null;

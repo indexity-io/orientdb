@@ -20,6 +20,7 @@ import static com.orientechnologies.lucene.builder.OLuceneQueryBuilder.EMPTY_MET
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.lucene.builder.OLuceneDocumentBuilder;
 import com.orientechnologies.lucene.builder.OLuceneIndexType;
@@ -49,7 +50,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import org.apache.lucene.document.Document;
@@ -157,10 +157,12 @@ public class OLuceneFullTextIndexEngine extends OLuceneIndexEngineAbstract {
       boolean toInclusive,
       boolean ascSortOrder,
       IndexEngineValuesTransformer transformer) {
-    return LuceneIndexTransformer.transformToStream((OLuceneResultSet) get(rangeFrom), rangeFrom);
+    //noinspection unchecked
+    return LuceneIndexTransformer.transformToStream(
+        (Stream<OIdentifiable>) get(rangeFrom), rangeFrom);
   }
 
-  private Set<OIdentifiable> getResults(
+  private OStream<OIdentifiable> getResults(
       final Query query,
       final OCommandContext context,
       final OLuceneTxChanges changes,
@@ -170,7 +172,7 @@ public class OLuceneFullTextIndexEngine extends OLuceneIndexEngineAbstract {
     final IndexSearcher luceneSearcher = searcher();
     final OLuceneQueryContext queryContext =
         new OLuceneQueryContext(context, luceneSearcher, query, fields).withChanges(changes);
-    return new OLuceneResultSet(this, queryContext, metadata);
+    return new OLuceneResultSet(this, queryContext, metadata).stream();
   }
 
   @Override
@@ -261,7 +263,7 @@ public class OLuceneFullTextIndexEngine extends OLuceneIndexEngineAbstract {
   }
 
   @Override
-  public Set<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes) {
+  public Stream<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes) {
     updateLastAccess();
     openIfClosed();
     try {

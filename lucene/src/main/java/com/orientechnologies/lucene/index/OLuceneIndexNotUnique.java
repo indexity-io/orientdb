@@ -18,6 +18,7 @@ package com.orientechnologies.lucene.index;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.listener.OProgressListener;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.lucene.OLuceneIndex;
 import com.orientechnologies.lucene.engine.OLuceneIndexEngine;
@@ -298,7 +299,7 @@ public class OLuceneIndexNotUnique extends OIndexAbstract implements OLuceneInde
         @SuppressWarnings("unchecked")
         Set<OIdentifiable> result = (Set<OIdentifiable>) storage.getIndexValue(indexId, key);
         //noinspection resource
-        return result.stream().map(OIdentifiable::getIdentity);
+        return OStream.stream(result).map(OIdentifiable::getIdentity);
         // TODO filter these results based on security
         //          return new HashSet(OIndexInternal.securityFilterOnRead(this, result));
       } catch (OInvalidIndexEngineIdException e) {
@@ -322,7 +323,6 @@ public class OLuceneIndexNotUnique extends OIndexAbstract implements OLuceneInde
                     OLuceneIndexEngine indexEngine = (OLuceneIndexEngine) engine;
                     return indexEngine.getInTx(key, getTransactionChanges(transaction));
                   })
-              .stream()
               .map(OIdentifiable::getIdentity);
         } catch (OInvalidIndexEngineIdException e) {
           doReloadIndexEngine();
@@ -333,9 +333,10 @@ public class OLuceneIndexNotUnique extends OIndexAbstract implements OLuceneInde
       while (true) {
         try {
           @SuppressWarnings("unchecked")
-          Set<OIdentifiable> result = (Set<OIdentifiable>) storage.getIndexValue(indexId, key);
+          Stream<OIdentifiable> result =
+              (Stream<OIdentifiable>) storage.getIndexValue(indexId, key);
           //noinspection resource
-          return result.stream().map(OIdentifiable::getIdentity);
+          return result.map(OIdentifiable::getIdentity);
           // TODO filter these results based on security
           //          return new HashSet(OIndexInternal.securityFilterOnRead(this, result));
         } catch (OInvalidIndexEngineIdException e) {

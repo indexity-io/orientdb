@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class OBaseExpression extends OMathExpression {
 
@@ -172,7 +173,7 @@ public class OBaseExpression extends OMathExpression {
     return identifier.estimateIndexedFunction(target, context, operator, right);
   }
 
-  public Iterable<OIdentifiable> executeIndexedFunction(
+  public Stream<OIdentifiable> executeIndexedFunction(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
     if (this.identifier == null) {
       return null;

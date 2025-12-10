@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OMathExpression extends SimpleNode {
 
@@ -930,7 +931,7 @@ public class OMathExpression extends SimpleNode {
     return -1;
   }
 
-  public Iterable<OIdentifiable> executeIndexedFunction(
+  public Stream<OIdentifiable> executeIndexedFunction(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
     if (this.childExpressions != null) {
       if (this.childExpressions.size() == 1) {

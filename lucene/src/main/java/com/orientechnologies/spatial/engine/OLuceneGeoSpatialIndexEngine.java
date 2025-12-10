@@ -17,8 +17,8 @@ package com.orientechnologies.spatial.engine;
 import static com.orientechnologies.lucene.builder.OLuceneQueryBuilder.EMPTY_METADATA;
 
 import com.orientechnologies.common.exception.OException;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.lucene.collections.OLuceneResultSet;
-import com.orientechnologies.lucene.collections.OLuceneResultSetEmpty;
 import com.orientechnologies.lucene.query.OLuceneQueryContext;
 import com.orientechnologies.lucene.tx.OLuceneTxChanges;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -35,7 +35,7 @@ import com.orientechnologies.spatial.query.OSpatialQueryContext;
 import com.orientechnologies.spatial.shape.OShapeBuilder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.spatial.SpatialStrategy;
@@ -62,7 +62,7 @@ public class OLuceneGeoSpatialIndexEngine extends OLuceneSpatialIndexEngineAbstr
   }
 
   @Override
-  public Set<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes) {
+  public Stream<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes) {
     updateLastAccess();
     openIfClosed();
     try {
@@ -79,14 +79,14 @@ public class OLuceneGeoSpatialIndexEngine extends OLuceneSpatialIndexEngineAbstr
       }
     }
 
-    return new OLuceneResultSetEmpty();
+    return OStream.empty();
   }
 
-  private Set<OIdentifiable> newGeoSearch(Map<String, Object> key, OLuceneTxChanges changes)
+  private Stream<OIdentifiable> newGeoSearch(Map<String, Object> key, OLuceneTxChanges changes)
       throws Exception {
 
     OLuceneQueryContext queryContext = queryStrategy.build(key).withChanges(changes);
-    return new OLuceneResultSet(this, queryContext, EMPTY_METADATA);
+    return new OLuceneResultSet(this, queryContext, EMPTY_METADATA).stream();
   }
 
   @Override

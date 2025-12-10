@@ -360,6 +360,7 @@ public class FetchFromIndexStep extends AbstractExecutionStep {
         itemsSet.add(item);
       }
       for (Object item : itemsSet) {
+        // FIXME: Stream close
         Iterator<ORawPair<Object, ORID>> localCursor =
             createCursor(equals, definition, item, ctx).iterator();
         final Object itemRef = item;

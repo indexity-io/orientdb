@@ -20,7 +20,7 @@
 package com.orientechnologies.orient.core.index;
 
 import com.orientechnologies.common.comparator.ODefaultComparator;
-import com.orientechnologies.common.stream.Streams;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.types.OModifiableBoolean;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
@@ -53,7 +53,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Abstract index implementation that supports multi-values for the same key.
@@ -91,10 +90,10 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
                 (Collection<ORID>) storage.getIndexValue(indexId, collatedKey);
             if (values != null) {
               //noinspection resource
-              stream = values.stream();
+              stream = OStream.stream(values);
             } else {
               //noinspection resource
-              stream = Stream.empty();
+              stream = OStream.empty();
             }
           } else if (apiVersion == 1) {
             //noinspection resource
@@ -130,12 +129,12 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
     }
     return IndexStreamSecurityDecorator.decorateRidStream(
         this,
-        Stream.concat(
+        OStream.concat(
             backedStream
                 .map((rid) -> calculateTxIndexEntry(collatedKey, rid, indexChanges))
                 .filter(Objects::nonNull)
                 .map((pair) -> pair.second),
-            txChanges.stream().map(OIdentifiable::getIdentity)));
+            OStream.stream(txChanges).map(OIdentifiable::getIdentity)));
   }
 
   public OIndexMultiValues put(Object key, final OIdentifiable singleValue) {
@@ -304,17 +303,15 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
     if (ascOrder) {
       //noinspection resource
       txStream =
-          StreamSupport.stream(
+          OStream.stream(
               new PureTxMultiValueBetweenIndexForwardSpliterator(
-                  this, fromKey, fromInclusive, toKey, toInclusive, indexChanges),
-              false);
+                  this, fromKey, fromInclusive, toKey, toInclusive, indexChanges));
     } else {
       //noinspection resource
       txStream =
-          StreamSupport.stream(
+          OStream.stream(
               new PureTxMultiValueBetweenIndexBackwardSplititerator(
-                  this, fromKey, fromInclusive, toKey, toInclusive, indexChanges),
-              false);
+                  this, fromKey, fromInclusive, toKey, toInclusive, indexChanges));
     }
 
     if (indexChanges.cleared) {
@@ -361,17 +358,15 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
     if (ascOrder) {
       //noinspection resource
       txStream =
-          StreamSupport.stream(
+          OStream.stream(
               new PureTxMultiValueBetweenIndexForwardSpliterator(
-                  this, fromKey, fromInclusive, lastKey, true, indexChanges),
-              false);
+                  this, fromKey, fromInclusive, lastKey, true, indexChanges));
     } else {
       //noinspection resource
       txStream =
-          StreamSupport.stream(
+          OStream.stream(
               new PureTxMultiValueBetweenIndexBackwardSplititerator(
-                  this, fromKey, fromInclusive, lastKey, true, indexChanges),
-              false);
+                  this, fromKey, fromInclusive, lastKey, true, indexChanges));
     }
 
     if (indexChanges.cleared) {
@@ -419,17 +414,15 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
     if (ascOrder) {
       //noinspection resource
       txStream =
-          StreamSupport.stream(
+          OStream.stream(
               new PureTxMultiValueBetweenIndexForwardSpliterator(
-                  this, firstKey, true, toKey, toInclusive, indexChanges),
-              false);
+                  this, firstKey, true, toKey, toInclusive, indexChanges));
     } else {
       //noinspection resource
       txStream =
-          StreamSupport.stream(
+          OStream.stream(
               new PureTxMultiValueBetweenIndexBackwardSplititerator(
-                  this, firstKey, true, toKey, toInclusive, indexChanges),
-              false);
+                  this, firstKey, true, toKey, toInclusive, indexChanges));
     }
 
     if (indexChanges.cleared) {
@@ -454,7 +447,7 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
 
     Stream<ORawPair<Object, ORID>> stream =
         IndexStreamSecurityDecorator.decorateStream(
-            this, sortedKeys.stream().flatMap(this::streamForKey));
+            this, OStream.stream(sortedKeys).flatMap(this::streamForKey));
 
     ODatabaseDocumentInternal database = getDatabase();
     final OTransactionIndexChanges indexChanges =
@@ -470,7 +463,7 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
     }
 
     final Stream<ORawPair<Object, ORID>> txStream =
-        keys.stream()
+        OStream.stream(keys)
             .flatMap((key) -> txStramForKey(indexChanges, key))
             .filter(Objects::nonNull)
             .sorted(keyComparator);
@@ -487,7 +480,7 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
       final OTransactionIndexChanges indexChanges, Object key) {
     final Set<OIdentifiable> result = calculateTxValue(getCollatingValue(key), indexChanges);
     if (result != null) {
-      return result.stream()
+      return OStream.stream(result)
           .map((rid) -> new ORawPair<>(getCollatingValue(key), rid.getIdentity()));
     }
     return null;
@@ -504,8 +497,8 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
           if (apiVersion == 0) {
             //noinspection unchecked,resource
             return Optional.ofNullable((Collection<ORID>) storage.getIndexValue(indexId, key))
-                .map((rids) -> rids.stream().map((rid) -> new ORawPair<>(entryKey, rid)))
-                .orElse(Stream.empty());
+                .map((rids) -> OStream.stream(rids).map((rid) -> new ORawPair<>(entryKey, rid)))
+                .orElse(OStream.empty());
           } else if (apiVersion == 1) {
             //noinspection resource
             return storage.getIndexValues(indexId, key).map((rid) -> new ORawPair<>(entryKey, rid));
@@ -597,10 +590,9 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
     }
 
     final Stream<ORawPair<Object, ORID>> txStream =
-        StreamSupport.stream(
+        OStream.stream(
             new PureTxMultiValueBetweenIndexForwardSpliterator(
-                this, null, true, null, true, indexChanges),
-            false);
+                this, null, true, null, true, indexChanges));
 
     if (indexChanges.cleared) {
       return IndexStreamSecurityDecorator.decorateStream(this, txStream);
@@ -621,7 +613,7 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
     } else {
       keyComparator = DescComparator.INSTANCE;
     }
-    return Streams.mergeSortedSpliterators(
+    return OStream.mergeSortedSpliterators(
         txStream,
         backedStream
             .map((entry) -> calculateTxIndexEntry(entry.first, entry.second, indexChanges))
@@ -680,10 +672,9 @@ public abstract class OIndexMultiValues extends OIndexAbstract {
     }
 
     final Stream<ORawPair<Object, ORID>> txStream =
-        StreamSupport.stream(
+        OStream.stream(
             new PureTxMultiValueBetweenIndexBackwardSplititerator(
-                this, null, true, null, true, indexChanges),
-            false);
+                this, null, true, null, true, indexChanges));
 
     if (indexChanges.cleared) {
       return IndexStreamSecurityDecorator.decorateStream(this, txStream);

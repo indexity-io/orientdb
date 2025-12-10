@@ -15,7 +15,7 @@
  */
 package com.orientechnologies.spatial.functions;
 
-import com.orientechnologies.lucene.collections.OLuceneResultSetEmpty;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Created by Enrico Risa on 31/08/15. */
 public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunctionAbstract
@@ -81,7 +82,7 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
     return ODatabaseRecordThreadLocal.instance().get();
   }
 
-  protected Iterable<OIdentifiable> results(
+  protected Stream<OIdentifiable> results(
       OFromClause target, OExpression[] args, OCommandContext ctx, Object rightValue) {
     OIndex oIndex = searchForIndex(target, args);
 
@@ -104,7 +105,7 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
       int size = ((Collection) shape).size();
 
       if (size == 0) {
-        return new OLuceneResultSetEmpty();
+        return OStream.empty();
       }
       if (size == 1) {
 
@@ -119,7 +120,7 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
               shape = ((OResult) property).toElement();
             }
           } else {
-            return new OLuceneResultSetEmpty();
+            return OStream.empty();
           }
         }
       } else {
@@ -140,7 +141,7 @@ public abstract class OSpatialFunctionAbstractIndexable extends OSpatialFunction
       ctx.setVariable("involvedIndexes", indexes);
     }
     indexes.add(oIndex.getName());
-    return oIndex.getInternal().getRids(queryParams).collect(Collectors.toSet());
+    return OStream.widen(oIndex.getInternal().getRids(queryParams));
   }
 
   protected void onAfterParsing(

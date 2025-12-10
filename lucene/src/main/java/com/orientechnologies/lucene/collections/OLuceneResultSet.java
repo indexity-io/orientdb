@@ -20,6 +20,7 @@ package com.orientechnologies.lucene.collections;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.lucene.engine.OLuceneIndexEngine;
 import com.orientechnologies.lucene.engine.OLuceneIndexEngineAbstract;
 import com.orientechnologies.lucene.engine.OLuceneIndexEngineUtils;
@@ -31,13 +32,12 @@ import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.OContextualRecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
@@ -55,7 +55,7 @@ import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.search.highlight.TokenSources;
 
 /** Created by Enrico Risa on 16/09/15. */
-public class OLuceneResultSet implements Set<OIdentifiable> {
+public class OLuceneResultSet {
 
   private static Integer PAGE_SIZE = 10000;
   private Query query;
@@ -67,10 +67,9 @@ public class OLuceneResultSet implements Set<OIdentifiable> {
   private int maxNumFragments;
   private TopDocs topDocs;
   private long deletedMatchCount = 0;
+  private long returnedHits = 0;
 
-  private boolean closed = false;
-
-  protected OLuceneResultSet() {}
+  private volatile boolean closed = false;
 
   public OLuceneResultSet(
       final OLuceneIndexEngine engine,
@@ -99,6 +98,8 @@ public class OLuceneResultSet implements Set<OIdentifiable> {
     highlighter = new Highlighter(formatter, scorer);
 
     maxNumFragments = (int) Optional.ofNullable(highlight.get("maxNumFragments")).orElse(2);
+
+    this.returnedHits = topDocs.totalHits - deletedMatchCount;
   }
 
   protected void fetchFirstBatch() {
@@ -115,61 +116,6 @@ public class OLuceneResultSet implements Set<OIdentifiable> {
     }
   }
 
-  @Override
-  public boolean isEmpty() {
-    return size() == 0;
-  }
-
-  @Override
-  public boolean contains(Object o) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Object[] toArray() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public <T> T[] toArray(T[] a) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean add(OIdentifiable oIdentifiable) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean remove(Object o) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean containsAll(Collection<?> c) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean addAll(Collection<? extends OIdentifiable> c) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean retainAll(Collection<?> c) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean removeAll(Collection<?> c) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void clear() {
-    throw new UnsupportedOperationException();
-  }
-
   public void sendLookupTime(OCommandContext commandContext, long start) {
     OLuceneIndexEngineUtils.sendLookupTime(indexName, commandContext, topDocs, -1, start);
   }
@@ -178,24 +124,26 @@ public class OLuceneResultSet implements Set<OIdentifiable> {
     return queryContext.deletedDocs(query);
   }
 
-  @Override
-  public int size() {
-    return (int) Math.max(0, topDocs.totalHits - deletedMatchCount);
+  private void close() {
+    if (!closed) {
+      final IndexSearcher searcher = queryContext.getSearcher();
+      engine.release(searcher);
+      closed = true;
+    }
   }
 
-  @Override
-  public Iterator<OIdentifiable> iterator() {
-    return new OLuceneResultSetIteratorTx();
+  public OStream<OIdentifiable> stream() {
+    return OStream.stream(new OLuceneResultSetSpliteratorTx()).onClose(this::close);
   }
 
-  private class OLuceneResultSetIteratorTx implements Iterator<OIdentifiable> {
+  private class OLuceneResultSetSpliteratorTx implements Spliterator<OIdentifiable> {
 
     private ScoreDoc[] scoreDocs;
     private int index;
     private int localIndex;
     private long totalHits;
 
-    public OLuceneResultSetIteratorTx() {
+    public OLuceneResultSetSpliteratorTx() {
       totalHits = topDocs.totalHits;
       index = 0;
       localIndex = 0;
@@ -205,29 +153,41 @@ public class OLuceneResultSet implements Set<OIdentifiable> {
     }
 
     @Override
-    public boolean hasNext() {
-      final boolean hasNext = index < (totalHits - deletedMatchCount);
-      if (!hasNext && !closed) {
-        final IndexSearcher searcher = queryContext.getSearcher();
-        engine.release(searcher);
-        closed = true;
+    public boolean tryAdvance(Consumer<? super OIdentifiable> action) {
+      if (closed) {
+        throw new IllegalStateException("ResultSet is closed");
       }
-      return hasNext;
-    }
+      final boolean hasNext = (index < returnedHits);
+      if (!hasNext) {
+        return false;
+      }
 
-    @Override
-    public OIdentifiable next() {
-      ScoreDoc scoreDoc;
       OContextualRecordId res;
       Document doc;
       do {
-        scoreDoc = fetchNext();
+        ScoreDoc scoreDoc = fetchNext();
         doc = toDocument(scoreDoc);
 
         res = toRecordId(doc, scoreDoc);
       } while (isToSkip(res, doc));
       index++;
-      return res;
+      action.accept(res);
+      return true;
+    }
+
+    @Override
+    public Spliterator<OIdentifiable> trySplit() {
+      return null;
+    }
+
+    @Override
+    public long estimateSize() {
+      return (int) Math.max(0, returnedHits);
+    }
+
+    @Override
+    public int characteristics() {
+      return ORDERED | SIZED | NONNULL;
     }
 
     protected ScoreDoc fetchNext() {
@@ -308,11 +268,6 @@ public class OLuceneResultSet implements Set<OIdentifiable> {
 
     private boolean isTempMatch(Document doc) {
       return doc.get(OLuceneTxChangesAbstract.TMP) != null;
-    }
-
-    @Override
-    public void remove() {
-      // TODO: something to be done here?
     }
   }
 }
