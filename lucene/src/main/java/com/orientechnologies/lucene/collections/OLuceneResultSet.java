@@ -58,7 +58,8 @@ import org.apache.lucene.search.highlight.TokenSources;
 /** Created by Enrico Risa on 16/09/15. */
 public class OLuceneResultSet {
 
-  private static Integer PAGE_SIZE = 10000;
+  // TODO: Make page size a global config item
+  private static Integer PAGE_SIZE = 1000;
   private Query query;
   private OLuceneIndexEngine engine;
   private OLuceneQueryContext queryContext;
@@ -102,7 +103,8 @@ public class OLuceneResultSet {
 
     final Long queryMaxHits = OLuceneFunctionsUtils.getResultLimit(queryContext.getContext());
     long maxHits = (queryMaxHits == null) ? Integer.MAX_VALUE : queryMaxHits;
-    this.returnedHits = Math.min(maxHits, topDocs.totalHits - deletedMatchCount);
+    // TODO: Implement a soft/hard cap on totalHits that can be iterated
+    this.returnedHits = Math.max(0, Math.min(maxHits, topDocs.totalHits - deletedMatchCount));
   }
 
   protected void fetchFirstBatch() {
@@ -188,7 +190,7 @@ public class OLuceneResultSet {
 
     @Override
     public long estimateSize() {
-      return (int) Math.max(0, returnedHits);
+      return returnedHits;
     }
 
     @Override
@@ -246,12 +248,13 @@ public class OLuceneResultSet {
       TopDocs topDocs = null;
       try {
         final IndexSearcher searcher = queryContext.getSearcher();
+        final int pageSize = (int) Math.min(returnedHits - index, PAGE_SIZE);
         if (queryContext.getSort() == null) {
-          topDocs = searcher.searchAfter(scoreDocs[scoreDocs.length - 1], query, PAGE_SIZE);
+          topDocs = searcher.searchAfter(scoreDocs[scoreDocs.length - 1], query, pageSize);
         } else {
           topDocs =
               searcher.searchAfter(
-                  scoreDocs[scoreDocs.length - 1], query, PAGE_SIZE, queryContext.getSort());
+                  scoreDocs[scoreDocs.length - 1], query, pageSize, queryContext.getSort());
         }
         scoreDocs = topDocs.scoreDocs;
       } catch (final IOException e) {
