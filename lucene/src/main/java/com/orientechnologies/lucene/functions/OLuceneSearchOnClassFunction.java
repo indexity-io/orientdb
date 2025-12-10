@@ -2,13 +2,13 @@ package com.orientechnologies.lucene.functions;
 
 import static com.orientechnologies.lucene.functions.OLuceneFunctionsUtils.getOrCreateMemoryIndex;
 
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.lucene.builder.OLuceneQueryBuilder;
 import com.orientechnologies.lucene.collections.OLuceneCompositeKey;
 import com.orientechnologies.lucene.index.OLuceneFullTextIndex;
 import com.orientechnologies.lucene.query.OLuceneKeyAndMetadata;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.OMetadataInternal;
 import com.orientechnologies.orient.core.record.OElement;
 import com.orientechnologies.orient.core.record.impl.ODocument;
@@ -19,7 +19,6 @@ import com.orientechnologies.orient.core.sql.parser.OExpression;
 import com.orientechnologies.orient.core.sql.parser.OFromClause;
 import com.orientechnologies.orient.core.sql.parser.OFromItem;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -117,7 +116,7 @@ public class OLuceneSearchOnClassFunction extends OLuceneSearchFunctionTemplate 
   }
 
   @Override
-  public Iterable<OIdentifiable> searchFromTarget(
+  public Stream<OIdentifiable> searchFromTarget(
       OFromClause target,
       OBinaryCompareOperator operator,
       Object rightValue,
@@ -133,19 +132,14 @@ public class OLuceneSearchOnClassFunction extends OLuceneSearchFunctionTemplate 
 
       ODocument metadata = getMetadata(args, ctx);
 
-      List<OIdentifiable> luceneResultSet;
-      try (Stream<ORID> rids =
+      return OStream.widen(
           index
               .getInternal()
               .getRids(
                   new OLuceneKeyAndMetadata(
-                      new OLuceneCompositeKey(Arrays.asList(query)).setContext(ctx), metadata))) {
-        luceneResultSet = rids.collect(Collectors.toList());
-      }
-
-      return luceneResultSet;
+                      new OLuceneCompositeKey(Arrays.asList(query)).setContext(ctx), metadata)));
     }
-    return Collections.emptySet();
+    return OStream.empty();
   }
 
   private ODocument getMetadata(OExpression[] args, OCommandContext ctx) {

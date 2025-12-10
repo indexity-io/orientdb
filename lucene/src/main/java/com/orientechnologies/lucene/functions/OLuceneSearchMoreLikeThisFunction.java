@@ -1,13 +1,13 @@
 package com.orientechnologies.lucene.functions;
 
 import com.orientechnologies.common.log.OLogManager;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.lucene.collections.OLuceneCompositeKey;
 import com.orientechnologies.lucene.exception.OLuceneIndexException;
 import com.orientechnologies.lucene.index.OLuceneFullTextIndex;
 import com.orientechnologies.lucene.query.OLuceneKeyAndMetadata;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
-import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.OMetadataInternal;
 import com.orientechnologies.orient.core.record.OElement;
@@ -72,7 +72,7 @@ public class OLuceneSearchMoreLikeThisFunction extends OSQLFunctionAbstract
   }
 
   @Override
-  public Iterable<OIdentifiable> searchFromTarget(
+  public Stream<OIdentifiable> searchFromTarget(
       OFromClause target,
       OBinaryCompareOperator operator,
       Object rightValue,
@@ -81,7 +81,7 @@ public class OLuceneSearchMoreLikeThisFunction extends OSQLFunctionAbstract
 
     OLuceneFullTextIndex index = this.searchForIndex(target, ctx);
 
-    if (index == null) return Collections.emptySet();
+    if (index == null) return OStream.empty();
 
     IndexSearcher searcher = index.searcher();
 
@@ -113,18 +113,13 @@ public class OLuceneSearchMoreLikeThisFunction extends OSQLFunctionAbstract
 
     Query mltQuery = queryBuilder.build();
 
-    Set<OIdentifiable> luceneResultSet;
-    try (Stream<ORID> rids =
+    return OStream.widen(
         index
             .getInternal()
             .getRids(
                 new OLuceneKeyAndMetadata(
                     new OLuceneCompositeKey(Arrays.asList(mltQuery.toString())).setContext(ctx),
-                    metadata))) {
-      luceneResultSet = rids.collect(Collectors.toSet());
-    }
-
-    return luceneResultSet;
+                    metadata)));
   }
 
   private List<String> parseRids(OCommandContext ctx, OExpression expression) {

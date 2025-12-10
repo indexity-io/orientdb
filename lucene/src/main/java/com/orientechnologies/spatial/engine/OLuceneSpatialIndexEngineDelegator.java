@@ -33,7 +33,6 @@ import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperation;
 import com.orientechnologies.spatial.shape.OShapeFactory;
 import java.io.IOException;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -286,7 +285,7 @@ public class OLuceneSpatialIndexEngineDelegator
   }
 
   @Override
-  public Set<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes) {
+  public Stream<OIdentifiable> getInTx(Object key, OLuceneTxChanges changes) {
     return delegate.getInTx(key, changes);
   }
 

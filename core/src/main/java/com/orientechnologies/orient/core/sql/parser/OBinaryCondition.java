@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class OBinaryCondition extends OBooleanExpression {
   protected OExpression left;
@@ -154,8 +155,7 @@ public class OBinaryCondition extends OBooleanExpression {
         target, context, operator, right.execute((OResult) null, context));
   }
 
-  public Iterable<OIdentifiable> executeIndexedFunction(
-      OFromClause target, OCommandContext context) {
+  public Stream<OIdentifiable> executeIndexedFunction(OFromClause target, OCommandContext context) {
     return left.executeIndexedFunction(
         target, context, operator, right.execute((OResult) null, context));
   }

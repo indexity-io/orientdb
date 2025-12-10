@@ -22,6 +22,7 @@ package com.orientechnologies.orient.core.sql;
 import com.orientechnologies.common.listener.OProgressListener;
 import com.orientechnologies.common.profiler.OProfiler;
 import com.orientechnologies.common.profiler.OProfilerStub;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -305,7 +306,7 @@ public class OChainedIndexProxy<T> implements OIndexInternal {
     }
 
     final Set<OIdentifiable> result = new HashSet<>(applyTailIndexes(lastIndexResult));
-    return result.stream().map(OIdentifiable::getIdentity);
+    return OStream.stream(result).map(OIdentifiable::getIdentity);
   }
 
   @Override
@@ -316,7 +317,7 @@ public class OChainedIndexProxy<T> implements OIndexInternal {
     }
 
     final Set<OIdentifiable> result = new HashSet<>(applyTailIndexes(lastIndexResult));
-    return result.stream().map(OIdentifiable::getIdentity);
+    return OStream.stream(result).map(OIdentifiable::getIdentity);
   }
 
   /**
@@ -744,7 +745,8 @@ public class OChainedIndexProxy<T> implements OIndexInternal {
       Stream<ORawPair<Object, ORID>> indexStream) {
     //noinspection resource
     return indexStream.flatMap(
-        (entry) -> applyTailIndexes(entry.second).stream().map((rid) -> new ORawPair<>(null, rid)));
+        (entry) ->
+            OStream.stream(applyTailIndexes(entry.second)).map((rid) -> new ORawPair<>(null, rid)));
   }
 
   @Override

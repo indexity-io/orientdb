@@ -15,6 +15,7 @@ import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class OExpression extends SimpleNode {
 
@@ -305,7 +306,7 @@ public class OExpression extends SimpleNode {
     return -1;
   }
 
-  public Iterable<OIdentifiable> executeIndexedFunction(
+  public Stream<OIdentifiable> executeIndexedFunction(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
     if (mathExpression != null) {
       return mathExpression.executeIndexedFunction(target, context, operator, right);

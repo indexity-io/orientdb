@@ -20,6 +20,7 @@
 package com.orientechnologies.orient.core.sql.operator;
 
 import com.orientechnologies.common.profiler.OProfiler;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OCommandContext;
@@ -174,7 +175,7 @@ public abstract class OQueryOperator {
    */
   public Stream<ORawPair<Object, ORID>> executeIndexQuery(
       OCommandContext iContext, OIndex index, final List<Object> keyParams, boolean ascSortOrder) {
-    return Stream.empty();
+    return OStream.empty();
   }
 
   @Override

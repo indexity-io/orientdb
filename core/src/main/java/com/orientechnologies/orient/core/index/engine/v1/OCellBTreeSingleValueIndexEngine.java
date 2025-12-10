@@ -2,6 +2,7 @@ package com.orientechnologies.orient.core.index.engine.v1;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.IndexEngineData;
 import com.orientechnologies.orient.core.encryption.OEncryption;
@@ -159,16 +160,16 @@ public final class OCellBTreeSingleValueIndexEngine
   public Stream<ORID> get(Object key) {
     final ORID rid = sbTree.get(key);
     if (rid == null) {
-      return Stream.empty();
+      return OStream.empty();
     }
-    return Stream.of(rid);
+    return OStream.of(rid);
   }
 
   @Override
   public Stream<ORawPair<Object, ORID>> stream(IndexEngineValuesTransformer valuesTransformer) {
     final Object firstKey = sbTree.firstKey();
     if (firstKey == null) {
-      return Stream.empty();
+      return OStream.empty();
     }
     return sbTree.iterateEntriesMajor(firstKey, true, true);
   }
@@ -177,7 +178,7 @@ public final class OCellBTreeSingleValueIndexEngine
   public Stream<ORawPair<Object, ORID>> descStream(IndexEngineValuesTransformer valuesTransformer) {
     final Object lastKey = sbTree.lastKey();
     if (lastKey == null) {
-      return Stream.empty();
+      return OStream.empty();
     }
     return sbTree.iterateEntriesMinor(lastKey, true, false);
   }

@@ -22,6 +22,7 @@ import com.orientechnologies.orient.core.sql.parser.OExpression;
 import com.orientechnologies.orient.core.sql.parser.OFromClause;
 import com.orientechnologies.spatial.strategy.SpatialQueryBuilderDWithin;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.locationtech.spatial4j.shape.Shape;
 
 /** Created by Enrico Risa on 12/08/15. */
@@ -59,7 +60,7 @@ public class OSTDWithinFunction extends OSpatialFunctionAbstractIndexable {
   }
 
   @Override
-  public Iterable<OIdentifiable> searchFromTarget(
+  public Stream<OIdentifiable> searchFromTarget(
       OFromClause target,
       OBinaryCompareOperator operator,
       Object rightValue,

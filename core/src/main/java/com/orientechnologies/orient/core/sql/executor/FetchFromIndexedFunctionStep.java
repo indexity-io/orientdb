@@ -13,6 +13,7 @@ import com.orientechnologies.orient.core.sql.parser.OFromClause;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /** Created by luigidellaquila on 06/08/16. */
 public class FetchFromIndexedFunctionStep extends AbstractExecutionStep {
@@ -21,6 +22,7 @@ public class FetchFromIndexedFunctionStep extends AbstractExecutionStep {
 
   private long cost = 0;
   // runtime
+  private Stream<OIdentifiable> functionResult = null;
   private Iterator<OIdentifiable> fullResult = null;
 
   public FetchFromIndexedFunctionStep(
@@ -86,10 +88,11 @@ public class FetchFromIndexedFunctionStep extends AbstractExecutionStep {
   }
 
   private void init(OCommandContext ctx) {
-    if (fullResult == null) {
+    if (functionResult == null) {
       long begin = profilingEnabled ? System.nanoTime() : 0;
       try {
-        fullResult = functionCondition.executeIndexedFunction(queryTarget, ctx).iterator();
+        functionResult = functionCondition.executeIndexedFunction(queryTarget, ctx);
+        fullResult = functionResult.iterator();
       } finally {
         if (profilingEnabled) {
           cost += (System.nanoTime() - begin);
@@ -112,7 +115,17 @@ public class FetchFromIndexedFunctionStep extends AbstractExecutionStep {
 
   @Override
   public void reset() {
-    this.fullResult = null;
+    if (functionResult != null) {
+      functionResult.close();
+      functionResult = null;
+      fullResult = null;
+    }
+  }
+
+  @Override
+  public void close() {
+    super.close();
+    reset();
   }
 
   @Override

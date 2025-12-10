@@ -22,6 +22,7 @@ package com.orientechnologies.orient.core.sharding.auto;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.OCommonConst;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.IndexEngineData;
@@ -55,7 +56,6 @@ import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Index engine implementation that relies on multiple hash indexes partitioned by key.
@@ -370,11 +370,9 @@ public final class OAutoShardingIndexEngine implements OIndexEngine {
   public Stream<ORawPair<Object, ORID>> stream(
       final IndexEngineValuesTransformer valuesTransformer) {
     //noinspection resource
-    return partitions.stream()
+    return OStream.stream(partitions)
         .flatMap(
-            (partition) ->
-                StreamSupport.stream(
-                    new HashTableSpliterator(valuesTransformer, partition), false));
+            (partition) -> OStream.stream(new HashTableSpliterator(valuesTransformer, partition)));
   }
 
   @Override
@@ -385,7 +383,7 @@ public final class OAutoShardingIndexEngine implements OIndexEngine {
 
   @Override
   public Stream<Object> keyStream() {
-    return StreamSupport.stream(
+    return OStream.stream(
         new Spliterator<Object>() {
           private int nextPartition = 1;
           private OHashTable<Object, Object> hashTable;
@@ -447,8 +445,7 @@ public final class OAutoShardingIndexEngine implements OIndexEngine {
           public int characteristics() {
             return NONNULL;
           }
-        },
-        false);
+        });
   }
 
   @Override

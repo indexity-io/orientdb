@@ -2,6 +2,7 @@ package com.orientechnologies.orient.core.index.engine.v1;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.IndexEngineData;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -25,9 +26,7 @@ import com.orientechnologies.orient.core.storage.index.sbtree.singlevalue.OCellB
 import com.orientechnologies.orient.core.storage.index.sbtree.singlevalue.v3.CellBTreeSingleValueV3;
 import java.io.IOException;
 import java.util.List;
-import java.util.Spliterators;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public final class OCellBTreeMultiValueIndexEngine
     implements OMultiValueIndexEngine, OCellBTreeIndexEngine {
@@ -345,7 +344,7 @@ public final class OCellBTreeMultiValueIndexEngine
     if (mvTree != null) {
       final Object firstKey = mvTree.firstKey();
       if (firstKey == null) {
-        return emptyStream();
+        return OStream.empty();
       }
 
       return mvTree.iterateEntriesMajor(firstKey, true, true);
@@ -354,7 +353,7 @@ public final class OCellBTreeMultiValueIndexEngine
 
       final OCompositeKey firstKey = svTree.firstKey();
       if (firstKey == null) {
-        return emptyStream();
+        return OStream.empty();
       }
 
       return mapSVStream(svTree.iterateEntriesMajor(firstKey, true, true));
@@ -366,16 +365,12 @@ public final class OCellBTreeMultiValueIndexEngine
     return stream.map((entry) -> new ORawPair<>(extractKey(entry.first), entry.second));
   }
 
-  private static Stream<ORawPair<Object, ORID>> emptyStream() {
-    return StreamSupport.stream(Spliterators.emptySpliterator(), false);
-  }
-
   @Override
   public Stream<ORawPair<Object, ORID>> descStream(IndexEngineValuesTransformer valuesTransformer) {
     if (mvTree != null) {
       final Object lastKey = mvTree.lastKey();
       if (lastKey == null) {
-        return emptyStream();
+        return OStream.empty();
       }
       return mvTree.iterateEntriesMinor(lastKey, true, false);
     } else {
@@ -383,7 +378,7 @@ public final class OCellBTreeMultiValueIndexEngine
 
       final OCompositeKey lastKey = svTree.lastKey();
       if (lastKey == null) {
-        return emptyStream();
+        return OStream.empty();
       }
       return mapSVStream(svTree.iterateEntriesMinor(lastKey, true, false));
     }

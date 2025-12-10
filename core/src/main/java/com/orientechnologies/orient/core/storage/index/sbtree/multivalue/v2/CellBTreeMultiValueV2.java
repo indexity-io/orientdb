@@ -25,6 +25,7 @@ import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
 import com.orientechnologies.common.serialization.types.OByteSerializer;
 import com.orientechnologies.common.serialization.types.OIntegerSerializer;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.types.OModifiableLong;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
@@ -54,11 +55,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * This is implementation which is based on B+-tree implementation threaded tree. The main
@@ -208,7 +207,7 @@ public final class CellBTreeMultiValueV2<K> extends ODurableComponent
 
           final BucketSearchResult bucketSearchResult = findBucket(key, atomicOperation);
           if (bucketSearchResult.itemIndex < 0) {
-            return Stream.empty();
+            return OStream.empty();
           }
 
           final long pageIndex = bucketSearchResult.pageIndex;
@@ -284,7 +283,7 @@ public final class CellBTreeMultiValueV2<K> extends ODurableComponent
             }
           }
 
-          return result.stream();
+          return OStream.stream(result);
         } else {
 
           try (final OCacheEntry nullCacheEntry =
@@ -313,7 +312,7 @@ public final class CellBTreeMultiValueV2<K> extends ODurableComponent
                         .collect(Collectors.toList()));
               }
             }
-            return values.stream();
+            return OStream.stream(values);
           }
         }
       } finally {
@@ -793,10 +792,10 @@ public final class CellBTreeMultiValueV2<K> extends ODurableComponent
       acquireSharedLock();
       try {
         if (!ascSortOrder) {
-          return StreamSupport.stream(iterateEntriesMinorDesc(key, inclusive), false);
+          return OStream.stream(iterateEntriesMinorDesc(key, inclusive));
         }
 
-        return StreamSupport.stream(iterateEntriesMinorAsc(key, inclusive), false);
+        return OStream.stream(iterateEntriesMinorAsc(key, inclusive));
       } finally {
         releaseSharedLock();
       }
@@ -812,10 +811,10 @@ public final class CellBTreeMultiValueV2<K> extends ODurableComponent
       acquireSharedLock();
       try {
         if (ascSortOrder) {
-          return StreamSupport.stream(iterateEntriesMajorAsc(key, inclusive), false);
+          return OStream.stream(iterateEntriesMajorAsc(key, inclusive));
         }
 
-        return StreamSupport.stream(iterateEntriesMajorDesc(key, inclusive), false);
+        return OStream.stream(iterateEntriesMajorDesc(key, inclusive));
       } finally {
         releaseSharedLock();
       }
@@ -894,10 +893,10 @@ public final class CellBTreeMultiValueV2<K> extends ODurableComponent
         final OAtomicOperation atomicOperation = atomicOperationsManager.getCurrentOperation();
         final BucketSearchResult searchResult = firstItem(atomicOperation);
         if (searchResult == null) {
-          return StreamSupport.stream(Spliterators.emptySpliterator(), false);
+          return OStream.empty();
         }
 
-        return StreamSupport.stream(new OCellBTreeFullKeyCursor(searchResult.pageIndex), false);
+        return OStream.stream(new OCellBTreeFullKeyCursor(searchResult.pageIndex));
       } finally {
         releaseSharedLock();
       }
@@ -922,11 +921,11 @@ public final class CellBTreeMultiValueV2<K> extends ODurableComponent
       acquireSharedLock();
       try {
         if (ascSortOrder) {
-          return StreamSupport.stream(
-              iterateEntriesBetweenAscOrder(keyFrom, fromInclusive, keyTo, toInclusive), false);
+          return OStream.stream(
+              iterateEntriesBetweenAscOrder(keyFrom, fromInclusive, keyTo, toInclusive));
         } else {
-          return StreamSupport.stream(
-              iterateEntriesBetweenDescOrder(keyFrom, fromInclusive, keyTo, toInclusive), false);
+          return OStream.stream(
+              iterateEntriesBetweenDescOrder(keyFrom, fromInclusive, keyTo, toInclusive));
         }
       } finally {
         releaseSharedLock();

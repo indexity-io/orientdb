@@ -2,6 +2,7 @@ package com.orientechnologies.lucene.functions;
 
 import static com.orientechnologies.lucene.functions.OLuceneFunctionsUtils.getOrCreateMemoryIndex;
 
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.lucene.builder.OLuceneQueryBuilder;
 import com.orientechnologies.lucene.collections.OLuceneCompositeKey;
 import com.orientechnologies.lucene.index.OLuceneFullTextIndex;
@@ -22,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.lucene.index.IndexableField;
@@ -104,7 +104,7 @@ public class OLuceneSearchOnFieldsFunction extends OLuceneSearchFunctionTemplate
   }
 
   @Override
-  public Iterable<OIdentifiable> searchFromTarget(
+  public Stream<OIdentifiable> searchFromTarget(
       OFromClause target,
       OBinaryCompareOperator operator,
       Object rightValue,
@@ -118,17 +118,12 @@ public class OLuceneSearchOnFieldsFunction extends OLuceneSearchFunctionTemplate
     if (index != null) {
 
       ODocument meta = getMetadata(args, ctx);
-      Set<OIdentifiable> luceneResultSet;
-      try (Stream<ORID> rids =
+      return OStream.widen(
           index
               .getInternal()
               .getRids(
                   new OLuceneKeyAndMetadata(
-                      new OLuceneCompositeKey(Arrays.asList(query)).setContext(ctx), meta))) {
-        luceneResultSet = rids.collect(Collectors.toSet());
-      }
-
-      return luceneResultSet;
+                      new OLuceneCompositeKey(Arrays.asList(query)).setContext(ctx), meta)));
     }
     throw new RuntimeException();
   }

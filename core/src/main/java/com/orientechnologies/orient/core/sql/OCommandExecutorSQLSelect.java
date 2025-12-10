@@ -28,10 +28,10 @@ import com.orientechnologies.common.io.OIOUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.profiler.OProfiler;
 import com.orientechnologies.common.stream.BreakingForEach;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.OPair;
 import com.orientechnologies.common.util.OPatternConst;
 import com.orientechnologies.common.util.ORawPair;
-import com.orientechnologies.common.util.OSizeable;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.command.OCommandContext;
@@ -2045,6 +2045,7 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
           // TODO sort every iterator
         }
         attempted++;
+        // FIXME: Check stream close...
         cursor.add(c.map((pair) -> (OIdentifiable) pair.second).iterator());
       }
     }
@@ -2244,10 +2245,11 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
     }
 
     // try indexed functions
-    Iterator<OIdentifiable> fetchedFromFunction = tryIndexedFunctions(iSchemaClass);
-    if (fetchedFromFunction != null) {
-      fetchFromTarget(fetchedFromFunction);
-      return true;
+    try (Stream<OIdentifiable> fetchedFromFunction = tryIndexedFunctions(iSchemaClass)) {
+      if (fetchedFromFunction != null) {
+        fetchFromTarget(fetchedFromFunction.iterator());
+        return true;
+      }
     }
 
     // the main condition is a set of sub-conditions separated by OR operators
@@ -2400,16 +2402,7 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
             final boolean restrictedClasses = isUsingRestrictedClasses();
 
             if (!restrictedClasses) {
-              final Iterator cursor = streams.get(0).iterator();
-              long count = 0;
-              if (cursor instanceof OSizeable) count = ((OSizeable) cursor).size();
-              else {
-                while (cursor.hasNext()) {
-                  cursor.next();
-                  count++;
-                }
-              }
-
+              final long count = streams.get(0).count();
               final OProfiler profiler = Orient.instance().getProfiler();
               if (profiler.isRecording()) {
                 profiler.updateCounter(
@@ -2449,7 +2442,7 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
     }
   }
 
-  private Iterator<OIdentifiable> tryIndexedFunctions(OClass iSchemaClass) {
+  private Stream<OIdentifiable> tryIndexedFunctions(OClass iSchemaClass) {
     // TODO profiler
     if (this.preParsedStatement == null) {
       return null;
@@ -2479,13 +2472,10 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
     if (bestCondition == null) {
       return null;
     }
-    Iterable<OIdentifiable> result =
+    Stream<OIdentifiable> result =
         bestCondition.executeIndexedFunction(
             ((OSelectStatement) this.preParsedStatement).getTarget(), getContext());
-    if (result == null) {
-      return null;
-    }
-    return result.iterator();
+    return result;
   }
 
   private boolean canOptimize(List<List<OIndexSearchResult>> conditionHierarchy) {
@@ -2563,7 +2553,7 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
         }
 
         if (streams.isEmpty()) {
-          return Stream.empty();
+          return OStream.empty();
         }
 
         if (streams.size() == 1) {
@@ -2572,7 +2562,7 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
 
         Stream<ORawPair<Object, ORID>> resultStream = streams.get(0);
         for (int i = 1; i < streams.size(); i++) {
-          resultStream = Stream.concat(resultStream, streams.get(i));
+          resultStream = OStream.concat(resultStream, streams.get(i));
         }
 
         return resultStream;
@@ -2583,8 +2573,10 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
     return null;
   }
 
-  private boolean fetchValuesFromIndexStream(final Stream<ORawPair<Object, ORID>> stream) {
-    return fetchFromTarget(stream.map((pair) -> pair.second).iterator());
+  private boolean fetchValuesFromIndexStream(final Stream<ORawPair<Object, ORID>> streamable) {
+    try (Stream<ORawPair<Object, ORID>> stream = streamable) {
+      return fetchFromTarget(stream.map((pair) -> pair.second).iterator());
+    }
   }
 
   private void fetchEntriesFromIndexStream(final Stream<ORawPair<Object, ORID>> stream) {
@@ -2904,16 +2896,18 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
         }
 
         final Object resultKey = keyValue;
-        BreakingForEach.forEach(
-            res,
-            (rid, breaker) -> {
-              final ODocument record = createIndexEntryAsDocument(resultKey, rid);
-              applyGroupBy(record, context);
-              if (!handleResult(record, context)) {
-                // LIMIT REACHED
-                breaker.stop();
-              }
-            });
+        try (Stream<ORID> orids = res) {
+          BreakingForEach.forEach(
+              orids,
+              (rid, breaker) -> {
+                final ODocument record = createIndexEntryAsDocument(resultKey, rid);
+                applyGroupBy(record, context);
+                if (!handleResult(record, context)) {
+                  // LIMIT REACHED
+                  breaker.stop();
+                }
+              });
+        }
       }
 
     } else {
@@ -2962,22 +2956,23 @@ public class OCommandExecutorSQLSelect extends OCommandExecutorSQLResultsetAbstr
       return;
     }
 
-    final Stream<ORID> rids = index.getInternal().getRids(null);
-    BreakingForEach.forEach(
-        rids,
-        (rid, breaker) -> {
-          final ODocument doc = new ODocument().setOrdered(true);
-          doc.field("key", (Object) null);
-          doc.field("rid", rid);
-          ORecordInternal.unsetDirty(doc);
+    try (final Stream<ORID> rids = index.getInternal().getRids(null)) {
+      BreakingForEach.forEach(
+          rids,
+          (rid, breaker) -> {
+            final ODocument doc = new ODocument().setOrdered(true);
+            doc.field("key", (Object) null);
+            doc.field("rid", rid);
+            ORecordInternal.unsetDirty(doc);
 
-          applyGroupBy(doc, context);
+            applyGroupBy(doc, context);
 
-          if (!handleResult(doc, context)) {
-            // LIMIT REACHED
-            breaker.stop();
-          }
-        });
+            if (!handleResult(doc, context)) {
+              // LIMIT REACHED
+              breaker.stop();
+            }
+          });
+    }
   }
 
   private boolean isIndexSizeQuery() {

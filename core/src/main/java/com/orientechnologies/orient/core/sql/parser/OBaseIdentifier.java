@@ -16,6 +16,7 @@ import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class OBaseIdentifier extends SimpleNode {
 
@@ -105,7 +106,7 @@ public class OBaseIdentifier extends SimpleNode {
     return -1;
   }
 
-  public Iterable<OIdentifiable> executeIndexedFunction(
+  public Stream<OIdentifiable> executeIndexedFunction(
       OFromClause target, OCommandContext context, OBinaryCompareOperator operator, Object right) {
     if (levelZero != null) {
       return levelZero.executeIndexedFunction(target, context, operator, right);

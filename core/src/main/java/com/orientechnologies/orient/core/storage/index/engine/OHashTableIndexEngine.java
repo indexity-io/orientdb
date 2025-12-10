@@ -21,6 +21,7 @@ package com.orientechnologies.orient.core.storage.index.engine;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
+import com.orientechnologies.common.stream.OStream;
 import com.orientechnologies.common.util.OCommonConst;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.orient.core.config.IndexEngineData;
@@ -52,7 +53,6 @@ import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * @author Andrey Lomakin (a.lomakin-at-orientdb.com)
@@ -354,7 +354,7 @@ public final class OHashTableIndexEngine implements OIndexEngine {
   @Override
   public Stream<ORawPair<Object, ORID>> stream(
       final IndexEngineValuesTransformer valuesTransformer) {
-    return StreamSupport.stream(
+    return OStream.stream(
         new Spliterator<ORawPair<Object, ORID>>() {
           private int nextEntriesIndex;
           private OHashTable.Entry<Object, Object>[] entries;
@@ -437,14 +437,13 @@ public final class OHashTableIndexEngine implements OIndexEngine {
           public int characteristics() {
             return NONNULL;
           }
-        },
-        false);
+        });
   }
 
   @Override
   public Stream<ORawPair<Object, ORID>> descStream(
       final IndexEngineValuesTransformer valuesTransformer) {
-    return StreamSupport.stream(
+    return OStream.stream(
         new Spliterator<ORawPair<Object, ORID>>() {
           private int nextEntriesIndex;
           private OHashTable.Entry<Object, Object>[] entries;
@@ -527,13 +526,12 @@ public final class OHashTableIndexEngine implements OIndexEngine {
           public int characteristics() {
             return NONNULL;
           }
-        },
-        false);
+        });
   }
 
   @Override
   public Stream<Object> keyStream() {
-    return StreamSupport.stream(
+    return OStream.stream(
         new Spliterator<Object>() {
           private int nextEntriesIndex;
           private OHashTable.Entry<Object, Object>[] entries;
@@ -580,8 +578,7 @@ public final class OHashTableIndexEngine implements OIndexEngine {
           public int characteristics() {
             return NONNULL;
           }
-        },
-        false);
+        });
   }
 
   @Override
