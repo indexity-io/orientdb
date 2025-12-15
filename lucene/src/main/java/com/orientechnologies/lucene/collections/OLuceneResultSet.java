@@ -28,6 +28,7 @@ import com.orientechnologies.lucene.exception.OLuceneIndexException;
 import com.orientechnologies.lucene.functions.OLuceneFunctionsUtils;
 import com.orientechnologies.lucene.query.OLuceneQueryContext;
 import com.orientechnologies.lucene.tx.OLuceneTxChangesAbstract;
+import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.OContextualRecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
@@ -56,9 +57,6 @@ import org.apache.lucene.search.highlight.TokenSources;
 
 /** Created by Enrico Risa on 16/09/15. */
 public class OLuceneResultSet {
-
-  // TODO: Make page size a global config item
-  private static Integer PAGE_SIZE = 1000;
 
   private final Query query;
   private final OLuceneIndexEngine engine;
@@ -231,7 +229,10 @@ public class OLuceneResultSet {
       try {
         final TopDocs topDocs;
         final IndexSearcher searcher = queryContext.getSearcher();
-        final int pageSize = (int) Math.min(maxHits, PAGE_SIZE);
+        int pageSize =
+            (int)
+                Math.min(
+                    maxHits, OGlobalConfiguration.LUCENE_RESULTS_PAGE_SIZE.getValueAsInteger());
         if (queryContext.getSort() == null) {
           topDocs = searcher.searchAfter(after, query, pageSize);
         } else {
