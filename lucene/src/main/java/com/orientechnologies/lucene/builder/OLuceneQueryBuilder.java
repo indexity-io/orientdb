@@ -20,6 +20,7 @@ package com.orientechnologies.lucene.builder;
 
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.lucene.analyzer.OLuceneAnalyzerFactory;
+import com.orientechnologies.lucene.functions.OLuceneFunctionsUtils;
 import com.orientechnologies.lucene.parser.OLuceneMultiFieldQueryParser;
 import com.orientechnologies.orient.core.index.OCompositeKey;
 import com.orientechnologies.orient.core.index.OIndexDefinition;
@@ -161,7 +162,7 @@ public class OLuceneQueryBuilder {
   private static Throwable prepareParseError(
       org.apache.lucene.queryparser.classic.ParseException e, ODocument metadata) {
     final Throwable cause;
-    final String reportAs = metadata.getProperty("reportQueryAs");
+    final String reportAs = OLuceneFunctionsUtils.getReportQueryAs(metadata);
     if (reportAs == null) {
       cause = e;
     } else {

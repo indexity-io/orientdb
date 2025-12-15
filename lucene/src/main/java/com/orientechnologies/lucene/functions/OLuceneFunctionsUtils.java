@@ -90,4 +90,8 @@ public class OLuceneFunctionsUtils {
     }
     return (Long) ctx.getVariable(OLuceneFunctionsUtils.MAX_HITS);
   }
+
+  public static String getReportQueryAs(ODocument metadata) {
+    return metadata.getProperty("reportQueryAs");
+  }
 }

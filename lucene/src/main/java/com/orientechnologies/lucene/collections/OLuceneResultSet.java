@@ -59,6 +59,7 @@ import org.apache.lucene.search.highlight.TokenSources;
 public class OLuceneResultSet {
 
   private final Query query;
+  private final String reportQueryAs;
   private final OLuceneIndexEngine engine;
   private final OLuceneQueryContext queryContext;
   private final String indexName;
@@ -74,6 +75,11 @@ public class OLuceneResultSet {
     this.engine = engine;
     this.queryContext = queryContext;
     this.query = queryContext.getQuery();
+    if (OLuceneFunctionsUtils.getReportQueryAs(metadata) != null) {
+      this.reportQueryAs = OLuceneFunctionsUtils.getReportQueryAs(metadata);
+    } else {
+      this.reportQueryAs = query.toString();
+    }
     this.indexName = engine.indexName();
     this.deletedMatchCount = calculateDeletedMatch();
 
@@ -242,9 +248,11 @@ public class OLuceneResultSet {
         return topDocs;
       } catch (final IOException e) {
         OLogManager.instance()
-            .error(this, "Error on fetching document by query '%s' to Lucene index", e, query);
+            .error(
+                this, "Error on fetching document by query '%s' to Lucene index", e, reportQueryAs);
         throw new OLuceneIndexException(
-            String.format("Error on fetching document by query '%s' to Lucene index", query));
+            String.format(
+                "Error on fetching document by query '%s' to Lucene index", reportQueryAs));
       }
     }
 
