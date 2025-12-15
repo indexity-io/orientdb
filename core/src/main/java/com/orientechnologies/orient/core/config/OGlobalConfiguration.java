@@ -1298,6 +1298,16 @@ public enum OGlobalConfiguration { // ENVIRONMENT
       String.class,
       "tx"),
 
+  LUCENE_RESULTS_HARD_LIMIT(
+      "lucene.results.hardLimit",
+      "Hard limit for Lucene index queries. Queries that return more than the hard limit will be logged at WARN level and the results capped to this value.",
+      Long.class,
+      Long.MAX_VALUE),
+  LUCENE_RESULTS_SOFT_LIMIT(
+      "lucene.results.softLimit",
+      "Soft limit for Lucene index queries. Queries that return more than the soft limit will be logged at WARN level.",
+      Long.class,
+      Long.MAX_VALUE),
   LUCENE_RESULTS_PAGE_SIZE(
       "lucene.results.pageSize",
       "Default size of pages fetched from the Lucene searcher during Lucene index queries.",
