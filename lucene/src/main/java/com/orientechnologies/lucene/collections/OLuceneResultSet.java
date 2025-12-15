@@ -124,7 +124,29 @@ public class OLuceneResultSet {
       final TopDocs topDocs = fetchMoreResult(null, maxHits);
       long totalHits = topDocs.totalHits - deletedMatchCount;
 
+      final long softLimit = OGlobalConfiguration.LUCENE_RESULTS_SOFT_LIMIT.getValueAsLong();
+      final long hardLimit = OGlobalConfiguration.LUCENE_RESULTS_HARD_LIMIT.getValueAsLong();
       long resultHits = Math.max(0, Math.min(maxHits, totalHits));
+      if (resultHits > softLimit) {
+        OLogManager.instance()
+            .warn(
+                this,
+                "Results returned by Lucene query '%s' exceeds soft limit (%d vs %d)",
+                reportQueryAs,
+                resultHits,
+                softLimit);
+      } else {
+        if (resultHits > hardLimit) {
+          OLogManager.instance()
+              .warn(
+                  this,
+                  "Results returned by Lucene query '%s' exceeds hard limit (%d vs %d)",
+                  reportQueryAs,
+                  resultHits,
+                  hardLimit);
+          resultHits = hardLimit;
+        }
+      }
       this.returnedHits = resultHits;
       OLuceneIndexEngineUtils.sendTotalHits(
           indexName, queryContext.getContext(), totalHits, returnedHits);
