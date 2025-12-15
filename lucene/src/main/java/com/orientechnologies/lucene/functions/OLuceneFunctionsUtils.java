@@ -1,11 +1,13 @@
 package com.orientechnologies.lucene.functions;
 
+import com.orientechnologies.lucene.exception.OLuceneIndexException;
 import com.orientechnologies.lucene.index.OLuceneFullTextIndex;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.metadata.OMetadataInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.parser.Node;
 import com.orientechnologies.orient.core.sql.parser.OExpression;
 import com.orientechnologies.orient.core.sql.parser.OFromClause;
 import com.orientechnologies.orient.core.sql.parser.OSelectStatement;
@@ -68,19 +70,71 @@ public class OLuceneFunctionsUtils {
     Object limitType = metadata.getProperty("limit");
 
     long maxHits = 0;
-    if ("select".equals(limitType) && target.jjtGetParent() instanceof OSelectStatement) {
-      OSelectStatement select = (OSelectStatement) target.jjtGetParent();
-      if (select.getLimit() != null) {
-        maxHits += ((Number) select.getLimit().getValue(ctx)).longValue();
-        if (select.getSkip() != null) {
-          maxHits += ((Number) select.getSkip().getValue(ctx)).longValue();
+    if ("select".equals(limitType) && isParentSelect(target)) {
+      if (Boolean.TRUE.equals(metadata.getProperty("inheritLimit"))) {
+        OSelectStatement select = getParentSelect(target);
+        while (select.getLimit() == null && hasContainingSelect(select)) {
+          select = getContainingSelect(select);
         }
+        maxHits = getLimitFromSelect(ctx, select);
+        if (select != getParentSelect(target)) {
+          maxHits *= getInheritedLimitMultiplier(metadata);
+        }
+      } else {
+        maxHits = getLimitFromSelect(ctx, getParentSelect(target));
       }
     } else if (limitType instanceof Number) {
       maxHits = ((Number) limitType).longValue();
     }
     if (maxHits != 0) {
       ctx.setVariable(MAX_HITS, maxHits);
+    }
+  }
+
+  private static int getInheritedLimitMultiplier(ODocument metadata) {
+    Object multiplier = metadata.getProperty("inheritLimitMultiplier");
+    if (multiplier instanceof Number) {
+      return ((Number) multiplier).intValue();
+    }
+    return 2;
+  }
+
+  private static final int CONTAINING_SELECT_DEPTH = 4;
+
+  private static boolean hasContainingSelect(final Node target) {
+    Node container = target;
+    for (int i = 0; i < CONTAINING_SELECT_DEPTH; i++) {
+      container = container.jjtGetParent();
+      if (container == null) {
+        return false;
+      }
+    }
+    return container instanceof OSelectStatement;
+  }
+
+  private static OSelectStatement getContainingSelect(Node target) {
+    return (OSelectStatement) target.jjtGetParent().jjtGetParent().jjtGetParent().jjtGetParent();
+  }
+
+  private static boolean isParentSelect(Node target) {
+    return target.jjtGetParent() instanceof OSelectStatement;
+  }
+
+  private static OSelectStatement getParentSelect(Node target) {
+    return (OSelectStatement) target.jjtGetParent();
+  }
+
+  private static long getLimitFromSelect(OCommandContext ctx, OSelectStatement select) {
+    long maxHits;
+    if (select.getLimit() != null) {
+      maxHits = ((Number) select.getLimit().getValue(ctx)).longValue();
+      if (select.getSkip() != null) {
+        maxHits += ((Number) select.getSkip().getValue(ctx)).longValue();
+      }
+      return maxHits;
+    } else {
+      throw new OLuceneIndexException(
+          "Lucene index search specifies limit:select, but no limit is specified in the select statement.");
     }
   }
 
