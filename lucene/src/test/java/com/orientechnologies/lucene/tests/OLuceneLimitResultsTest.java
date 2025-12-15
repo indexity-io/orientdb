@@ -20,6 +20,7 @@ package com.orientechnologies.lucene.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.orientechnologies.lucene.exception.OLuceneIndexException;
 import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import java.io.InputStream;
@@ -40,76 +41,86 @@ public class OLuceneLimitResultsTest extends OLuceneBaseTest {
   }
 
   @Test
-  public void testLimitSelect() {
-    OResultSet docs =
-        db.query(
-            "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits "
-                + "from Song where search_class('title:man', {\"limit\":\"select\"})= true limit 1");
-
-    List<OResult> results = docs.stream().collect(Collectors.toList());
-    assertThat(results).hasSize(1);
-
-    OResult doc = results.get(0);
-    System.out.println("doc.toElement().toJSON() = " + doc.toElement().toJSON());
-
-    assertThat(doc.<Long>getProperty("$totalHits")).isEqualTo(14L);
-    assertThat(doc.<Long>getProperty("$Song_title_totalHits")).isEqualTo(14L);
-    assertThat(doc.<Long>getProperty("$returnedHits")).isEqualTo(1L);
-    assertThat(doc.<Long>getProperty("$Song_title_returnedHits")).isEqualTo(1L);
-    docs.close();
-
-    docs =
-        db.query(
-            "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits "
-                + "from Song where search_class('title:man', {\"limit\":\"select\"})= true skip 5 limit 5");
-
-    results = docs.stream().collect(Collectors.toList());
-    assertThat(results).hasSize(5);
-
-    doc = results.get(0);
-    System.out.println("doc.toElement().toJSON() = " + doc.toElement().toJSON());
-
-    assertThat(doc.<Long>getProperty("$totalHits")).isEqualTo(14L);
-    assertThat(doc.<Long>getProperty("$Song_title_totalHits")).isEqualTo(14L);
-    assertThat(doc.<Long>getProperty("$returnedHits")).isEqualTo(10L);
-    assertThat(doc.<Long>getProperty("$Song_title_returnedHits")).isEqualTo(10L);
-    docs.close();
-  }
-
-  @Test
   public void testLimitByNumber() {
     OResultSet docs =
         db.query(
             "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song "
                 + "where search_class('title:man', {\"limit\": 5})= true limit 1");
 
-    List<OResult> results = docs.stream().collect(Collectors.toList());
-    assertThat(results).hasSize(1);
-
-    OResult doc = results.get(0);
-    System.out.println("doc.toElement().toJSON() = " + doc.toElement().toJSON());
-
-    assertThat(doc.<Long>getProperty("$totalHits")).isEqualTo(14L);
-    assertThat(doc.<Long>getProperty("$Song_title_totalHits")).isEqualTo(14L);
-    assertThat(doc.<Long>getProperty("$returnedHits")).isEqualTo(5L);
-    assertThat(doc.<Long>getProperty("$Song_title_returnedHits")).isEqualTo(5L);
-    docs.close();
+    checkLimitedResult(docs, 1, 5);
 
     docs =
         db.query(
             "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song "
                 + "where search_class('title:man', {\"limit\": 5})= true limit 10");
 
-    results = docs.stream().collect(Collectors.toList());
-    assertThat(results).hasSize(5);
+    checkLimitedResult(docs, 5, 5);
+  }
 
-    doc = results.get(0);
-    System.out.println("doc.toElement().toJSON() = " + doc.toElement().toJSON());
+  @Test
+  public void testLimitSelect() {
+    OResultSet docs =
+        db.query(
+            "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits "
+                + "from Song where search_class('title:man', {\"limit\":\"select\"})= true limit 1");
+
+    checkLimitedResult(docs, 1, 1);
+  }
+
+  @Test(expected = OLuceneIndexException.class)
+  public void testLimitSelectRequiresLimit() {
+    db.query("select * from Song where search_class('title:man', {\"limit\":\"select\"})= true");
+  }
+
+  @Test(expected = OLuceneIndexException.class)
+  public void testLimitSelectDoesntUseParentLimit() {
+    db.query(
+        "select * from ("
+            + "select * from Song where search_class('title:man', {\"limit\":\"select\"})= true)"
+            + "limit 1");
+  }
+
+  @Test
+  public void testLimitSelectNested() {
+    OResultSet docs =
+        db.query(
+            "select * from ("
+                + "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song"
+                + "   where search_class('title:man', {\"limit\":\"select\", \"inheritLimit\":true})= true)"
+                + "limit 3");
+
+    checkLimitedResult(docs, 3, 6);
+
+    docs =
+        db.query(
+            "select * from ("
+                + "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song"
+                + "   where search_class('title:man', {\"limit\":\"select\", \"inheritLimit\":true, \"inheritLimitMultiplier\":3})= true)"
+                + "limit 3");
+
+    checkLimitedResult(docs, 3, 9);
+  }
+
+  @Test
+  public void testLimitWithInheritedAtTopLevel() {
+    OResultSet docs =
+        db.query(
+            "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song "
+                + "where search_class('title:man', {\"limit\":\"select\", \"inheritLimit\":true})= true limit 1");
+
+    checkLimitedResult(docs, 1, 1);
+  }
+
+  private void checkLimitedResult(OResultSet docs, int resultCount, long returnedHits) {
+    List<OResult> results = docs.stream().collect(Collectors.toList());
+    assertThat(results).hasSize(resultCount);
+
+    OResult doc = results.get(0);
 
     assertThat(doc.<Long>getProperty("$totalHits")).isEqualTo(14L);
     assertThat(doc.<Long>getProperty("$Song_title_totalHits")).isEqualTo(14L);
-    assertThat(doc.<Long>getProperty("$returnedHits")).isEqualTo(5L);
-    assertThat(doc.<Long>getProperty("$Song_title_returnedHits")).isEqualTo(5L);
+    assertThat(doc.<Long>getProperty("$returnedHits")).isEqualTo(returnedHits);
+    assertThat(doc.<Long>getProperty("$Song_title_returnedHits")).isEqualTo(returnedHits);
     docs.close();
   }
 }
