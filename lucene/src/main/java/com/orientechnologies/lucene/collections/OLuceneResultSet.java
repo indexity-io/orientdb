@@ -34,6 +34,7 @@ import com.orientechnologies.orient.core.id.OContextualRecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,6 +68,7 @@ public class OLuceneResultSet {
   private final Highlighter highlighter;
   private final List<String> highlighted;
   private final int maxNumFragments;
+  private final String distinctKey;
 
   public OLuceneResultSet(
       final OLuceneIndexEngine engine,
@@ -98,6 +100,13 @@ public class OLuceneResultSet {
     highlighter = new Highlighter(formatter, scorer);
 
     maxNumFragments = (int) Optional.ofNullable(highlight.get("maxNumFragments")).orElse(2);
+
+    final String distinctBy = metadata.getProperty("distinctBy");
+    if ("@rid".equals(distinctBy)) {
+      this.distinctKey = OLuceneIndexEngineAbstract.RID;
+    } else {
+      this.distinctKey = distinctBy;
+    }
   }
 
   private long calculateDeletedMatch() {
@@ -112,6 +121,8 @@ public class OLuceneResultSet {
   private class OLuceneResultSetSpliteratorTx implements Spliterator<OIdentifiable> {
 
     private final long returnedHits;
+    private final HashSet<String> distinctIds;
+
     private ScoreDoc[] scoreDocs;
     private int index;
     private int localIndex;
@@ -150,6 +161,8 @@ public class OLuceneResultSet {
       this.returnedHits = resultHits;
       OLuceneIndexEngineUtils.sendTotalHits(
           indexName, queryContext.getContext(), totalHits, returnedHits);
+
+      distinctIds = (distinctKey == null) ? null : new HashSet<>((int) Math.min(1000, resultHits));
     }
 
     public void close() {
@@ -193,7 +206,7 @@ public class OLuceneResultSet {
 
     @Override
     public long estimateSize() {
-      return returnedHits;
+      return (distinctIds == null) ? returnedHits : Long.MAX_VALUE;
     }
 
     @Override
@@ -250,7 +263,7 @@ public class OLuceneResultSet {
     }
 
     private boolean isToSkip(final OContextualRecordId recordId, final Document doc) {
-      return isDeleted(recordId, doc) || isUpdatedDiskMatch(recordId, doc);
+      return isDeleted(recordId, doc) || isUpdatedDiskMatch(recordId, doc) || !isDistinct(doc);
     }
 
     private TopDocs fetchMoreResult(ScoreDoc after, long maxHits) {
@@ -260,7 +273,8 @@ public class OLuceneResultSet {
         int pageSize =
             (int)
                 Math.min(
-                    maxHits, OGlobalConfiguration.LUCENE_RESULTS_PAGE_SIZE.getValueAsInteger());
+                    ((distinctIds == null) ? 1 : 3) * maxHits,
+                    OGlobalConfiguration.LUCENE_RESULTS_PAGE_SIZE.getValueAsInteger());
         if (queryContext.getSort() == null) {
           topDocs = searcher.searchAfter(after, query, pageSize);
         } else {
@@ -292,6 +306,14 @@ public class OLuceneResultSet {
 
     private boolean isTempMatch(Document doc) {
       return doc.get(OLuceneTxChangesAbstract.TMP) != null;
+    }
+
+    private boolean isDistinct(Document doc) {
+      if (distinctIds == null) {
+        return true;
+      }
+      final String distinctId = doc.get(distinctKey);
+      return (distinctId == null) || distinctIds.add(distinctId);
     }
   }
 }
