@@ -59,18 +59,15 @@ public class OLuceneResultSet {
 
   // TODO: Make page size a global config item
   private static Integer PAGE_SIZE = 1000;
-  private Query query;
-  private OLuceneIndexEngine engine;
-  private OLuceneQueryContext queryContext;
-  private String indexName;
-  private Highlighter highlighter;
-  private List<String> highlighted;
-  private int maxNumFragments;
-  private TopDocs topDocs;
-  private long deletedMatchCount = 0;
-  private long returnedHits = 0;
 
-  private volatile boolean closed = false;
+  private final Query query;
+  private final OLuceneIndexEngine engine;
+  private final OLuceneQueryContext queryContext;
+  private final String indexName;
+  private final long deletedMatchCount;
+  private final Highlighter highlighter;
+  private final List<String> highlighted;
+  private final int maxNumFragments;
 
   public OLuceneResultSet(
       final OLuceneIndexEngine engine,
@@ -80,9 +77,7 @@ public class OLuceneResultSet {
     this.queryContext = queryContext;
     this.query = queryContext.getQuery();
     this.indexName = engine.indexName();
-
-    fetchFirstBatch();
-    deletedMatchCount = calculateDeletedMatch();
+    this.deletedMatchCount = calculateDeletedMatch();
 
     final Map<String, Object> highlight =
         Optional.ofNullable(metadata.<Map>getProperty("highlight")).orElse(Collections.emptyMap());
@@ -99,60 +94,44 @@ public class OLuceneResultSet {
     highlighter = new Highlighter(formatter, scorer);
 
     maxNumFragments = (int) Optional.ofNullable(highlight.get("maxNumFragments")).orElse(2);
-
-    final Long queryMaxHits = OLuceneFunctionsUtils.getResultLimit(queryContext.getContext());
-    long maxHits = (queryMaxHits == null) ? Integer.MAX_VALUE : queryMaxHits;
-    // TODO: Implement a soft/hard cap on totalHits that can be iterated
-    this.returnedHits = Math.max(0, Math.min(maxHits, topDocs.totalHits - deletedMatchCount));
   }
 
-  protected void fetchFirstBatch() {
-    try {
-      final IndexSearcher searcher = queryContext.getSearcher();
-      if (queryContext.getSort() == null) {
-        topDocs = searcher.search(query, PAGE_SIZE);
-      } else {
-        topDocs = searcher.search(query, PAGE_SIZE, queryContext.getSort());
-      }
-    } catch (final IOException e) {
-      OLogManager.instance()
-          .error(this, "Error on fetching document by query '%s' to Lucene index", e, query);
-    }
-  }
-
-  protected long calculateDeletedMatch() {
+  private long calculateDeletedMatch() {
     return queryContext.deletedDocs(query);
   }
 
-  private void close() {
-    if (!closed) {
-      final IndexSearcher searcher = queryContext.getSearcher();
-      engine.release(searcher);
-      closed = true;
-    }
-  }
-
   public OStream<OIdentifiable> stream() {
-    return OStream.stream(new OLuceneResultSetSpliteratorTx()).onClose(this::close);
+    final OLuceneResultSetSpliteratorTx results = new OLuceneResultSetSpliteratorTx();
+    return OStream.stream(results).onClose(results::close);
   }
 
   private class OLuceneResultSetSpliteratorTx implements Spliterator<OIdentifiable> {
 
+    private final long returnedHits;
     private ScoreDoc[] scoreDocs;
     private int index;
     private int localIndex;
-    private long totalHits;
+    private volatile boolean closed = false;
 
     public OLuceneResultSetSpliteratorTx() {
-      totalHits = topDocs.totalHits;
-      index = 0;
-      localIndex = 0;
-      scoreDocs = topDocs.scoreDocs;
+      final Long queryMaxHits = OLuceneFunctionsUtils.getResultLimit(queryContext.getContext());
+      long maxHits = (queryMaxHits == null) ? Long.MAX_VALUE : queryMaxHits;
+
+      final TopDocs topDocs = fetchMoreResult(null, maxHits);
+      long totalHits = topDocs.totalHits - deletedMatchCount;
+
+      long resultHits = Math.max(0, Math.min(maxHits, totalHits));
+      this.returnedHits = resultHits;
       OLuceneIndexEngineUtils.sendTotalHits(
-          indexName,
-          queryContext.getContext(),
-          topDocs.totalHits - deletedMatchCount,
-          returnedHits);
+          indexName, queryContext.getContext(), totalHits, returnedHits);
+    }
+
+    public void close() {
+      if (!closed) {
+        final IndexSearcher searcher = queryContext.getSearcher();
+        engine.release(searcher);
+        closed = true;
+      }
     }
 
     @Override
@@ -169,6 +148,9 @@ public class OLuceneResultSet {
       Document doc;
       do {
         ScoreDoc scoreDoc = fetchNext();
+        if (scoreDoc == null) {
+          return false;
+        }
         doc = toDocument(scoreDoc);
 
         res = toRecordId(doc, scoreDoc);
@@ -194,9 +176,15 @@ public class OLuceneResultSet {
     }
 
     protected ScoreDoc fetchNext() {
+      if (scoreDocs.length == 0) {
+        return null;
+      }
       if (localIndex == scoreDocs.length) {
         localIndex = 0;
-        fetchMoreResult();
+        fetchMoreResult(scoreDocs[scoreDocs.length - 1], returnedHits - index);
+        if (scoreDocs.length == 0) {
+          return null;
+        }
       }
       final ScoreDoc score = scoreDocs[localIndex++];
       return score;
@@ -239,22 +227,23 @@ public class OLuceneResultSet {
       return isDeleted(recordId, doc) || isUpdatedDiskMatch(recordId, doc);
     }
 
-    private void fetchMoreResult() {
-      TopDocs topDocs = null;
+    private TopDocs fetchMoreResult(ScoreDoc after, long maxHits) {
       try {
+        final TopDocs topDocs;
         final IndexSearcher searcher = queryContext.getSearcher();
-        final int pageSize = (int) Math.min(returnedHits - index, PAGE_SIZE);
+        final int pageSize = (int) Math.min(maxHits, PAGE_SIZE);
         if (queryContext.getSort() == null) {
-          topDocs = searcher.searchAfter(scoreDocs[scoreDocs.length - 1], query, pageSize);
+          topDocs = searcher.searchAfter(after, query, pageSize);
         } else {
-          topDocs =
-              searcher.searchAfter(
-                  scoreDocs[scoreDocs.length - 1], query, pageSize, queryContext.getSort());
+          topDocs = searcher.searchAfter(after, query, pageSize, queryContext.getSort());
         }
         scoreDocs = topDocs.scoreDocs;
+        return topDocs;
       } catch (final IOException e) {
         OLogManager.instance()
             .error(this, "Error on fetching document by query '%s' to Lucene index", e, query);
+        throw new OLuceneIndexException(
+            String.format("Error on fetching document by query '%s' to Lucene index", query));
       }
     }
 
