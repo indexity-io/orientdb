@@ -28,7 +28,6 @@ import com.orientechnologies.lucene.exception.OLuceneIndexException;
 import com.orientechnologies.lucene.functions.OLuceneFunctionsUtils;
 import com.orientechnologies.lucene.query.OLuceneQueryContext;
 import com.orientechnologies.lucene.tx.OLuceneTxChangesAbstract;
-import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.OContextualRecordId;
 import com.orientechnologies.orient.core.record.impl.ODocument;
@@ -119,10 +118,6 @@ public class OLuceneResultSet {
       OLogManager.instance()
           .error(this, "Error on fetching document by query '%s' to Lucene index", e, query);
     }
-  }
-
-  public void sendLookupTime(OCommandContext commandContext, long start) {
-    OLuceneIndexEngineUtils.sendLookupTime(indexName, commandContext, topDocs, -1, start);
   }
 
   protected long calculateDeletedMatch() {
