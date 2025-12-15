@@ -1298,6 +1298,12 @@ public enum OGlobalConfiguration { // ENVIRONMENT
       String.class,
       "tx"),
 
+  LUCENE_RESULTS_PAGE_SIZE(
+      "lucene.results.pageSize",
+      "Default size of pages fetched from the Lucene searcher during Lucene index queries.",
+      Integer.class,
+      1000L),
+
   /**
    * Maximum size of pool of network channels between client and server. A channel is a TCP/IP
    * connection.
