@@ -39,7 +39,7 @@ public class OProfileStatement extends OStatement {
   }
 
   @Override
-  public OResultSet execute(
+  public OResultSet doExecute(
       ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     ((ODatabaseInternal) db).resetRecordLoadStats();
     OBasicCommandContext ctx = new OBasicCommandContext();

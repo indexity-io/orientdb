@@ -1312,7 +1312,13 @@ public enum OGlobalConfiguration { // ENVIRONMENT
       "lucene.results.pageSize",
       "Default size of pages fetched from the Lucene searcher during Lucene index queries.",
       Integer.class,
-      1000L),
+      1000),
+
+  SLOW_QUERY_TIME(
+      "query.slowQuery.time",
+      "Maximum time (in ms) for statement execution before they are considered slow and logged.",
+      Long.class,
+      Long.MAX_VALUE),
 
   /**
    * Maximum size of pool of network channels between client and server. A channel is a TCP/IP

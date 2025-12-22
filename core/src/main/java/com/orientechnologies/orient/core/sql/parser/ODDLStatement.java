@@ -21,7 +21,7 @@ public abstract class ODDLStatement extends OStatement {
 
   public abstract OResultSet executeDDL(OCommandContext ctx);
 
-  public OResultSet execute(
+  public OResultSet doExecute(
       ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {

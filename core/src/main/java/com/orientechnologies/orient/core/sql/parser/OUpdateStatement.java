@@ -188,7 +188,8 @@ public class OUpdateStatement extends OStatement {
     return result;
   }
 
-  public OResultSet execute(
+  @Override
+  public OResultSet doExecute(
       ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
