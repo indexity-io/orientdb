@@ -28,21 +28,12 @@ import org.apache.lucene.search.TopDocs;
 public class OLuceneIndexEngineUtils {
 
   public static void sendTotalHits(
-      String indexName, OCommandContext context, long totalHits, long returnedHits) {
+      String indexName, OCommandContext context, long totalHits, long maxReturnedHits) {
     if (context != null) {
-
-      if (context.getVariable("totalHits") == null) {
-        context.setVariable("totalHits", totalHits);
-      } else {
-        context.setVariable("totalHits", null);
-      }
+      context.setVariable("totalHits", totalHits);
       context.setVariable((indexName + ".totalHits").replace(".", "_"), totalHits);
-      if (context.getVariable("returnedHits") == null) {
-        context.setVariable("returnedHits", returnedHits);
-      } else {
-        context.setVariable("returnedHits", null);
-      }
-      context.setVariable((indexName + ".returnedHits").replace(".", "_"), returnedHits);
+      context.setVariable("maxReturnedHits", maxReturnedHits);
+      context.setVariable((indexName + ".maxReturnedHits").replace(".", "_"), maxReturnedHits);
     }
   }
 
@@ -62,7 +53,7 @@ public class OLuceneIndexEngineUtils {
               put("limit", limit);
               put("totalTime", finalTime);
               put("totalHits", docs.totalHits);
-              put("returnedHits", docs.scoreDocs.length);
+              put("maxReturnedHits", docs.scoreDocs.length);
               if (!Float.isNaN(docs.getMaxScore())) {
                 put("maxScore", docs.getMaxScore());
               }

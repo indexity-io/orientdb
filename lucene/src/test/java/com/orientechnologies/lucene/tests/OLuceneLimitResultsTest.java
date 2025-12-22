@@ -44,14 +44,14 @@ public class OLuceneLimitResultsTest extends OLuceneBaseTest {
   public void testLimitByNumber() {
     OResultSet docs =
         db.query(
-            "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song "
+            "select *,$totalHits,$Song_title_totalHits,$maxReturnedHits,$Song_title_maxReturnedHits from Song "
                 + "where search_class('title:man', {\"limit\": 5})= true limit 1");
 
     checkLimitedResult(docs, 1, 5);
 
     docs =
         db.query(
-            "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song "
+            "select *,$totalHits,$Song_title_totalHits,$maxReturnedHits,$Song_title_maxReturnedHits from Song "
                 + "where search_class('title:man', {\"limit\": 5})= true limit 10");
 
     checkLimitedResult(docs, 5, 5);
@@ -61,7 +61,7 @@ public class OLuceneLimitResultsTest extends OLuceneBaseTest {
   public void testLimitSelect() {
     OResultSet docs =
         db.query(
-            "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits "
+            "select *,$totalHits,$Song_title_totalHits,$maxReturnedHits,$Song_title_maxReturnedHits "
                 + "from Song where search_class('title:man', {\"limit\":\"select\"})= true limit 1");
 
     checkLimitedResult(docs, 1, 1);
@@ -85,7 +85,7 @@ public class OLuceneLimitResultsTest extends OLuceneBaseTest {
     OResultSet docs =
         db.query(
             "select * from ("
-                + "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song"
+                + "select *,$totalHits,$Song_title_totalHits,$maxReturnedHits,$Song_title_maxReturnedHits from Song"
                 + "   where search_class('title:man', {\"limit\":\"select\", \"inheritLimit\":true})= true)"
                 + "limit 3");
 
@@ -94,7 +94,7 @@ public class OLuceneLimitResultsTest extends OLuceneBaseTest {
     docs =
         db.query(
             "select * from ("
-                + "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song"
+                + "select *,$totalHits,$Song_title_totalHits,$maxReturnedHits,$Song_title_maxReturnedHits from Song"
                 + "   where search_class('title:man', {\"limit\":\"select\", \"inheritLimit\":true, \"inheritLimitMultiplier\":3})= true)"
                 + "limit 3");
 
@@ -105,7 +105,7 @@ public class OLuceneLimitResultsTest extends OLuceneBaseTest {
   public void testLimitWithInheritedAtTopLevel() {
     OResultSet docs =
         db.query(
-            "select *,$totalHits,$Song_title_totalHits,$returnedHits,$Song_title_returnedHits from Song "
+            "select *,$totalHits,$Song_title_totalHits,$maxReturnedHits,$Song_title_maxReturnedHits from Song "
                 + "where search_class('title:man', {\"limit\":\"select\", \"inheritLimit\":true})= true limit 1");
 
     checkLimitedResult(docs, 1, 1);
@@ -119,8 +119,8 @@ public class OLuceneLimitResultsTest extends OLuceneBaseTest {
 
     assertThat(doc.<Long>getProperty("$totalHits")).isEqualTo(14L);
     assertThat(doc.<Long>getProperty("$Song_title_totalHits")).isEqualTo(14L);
-    assertThat(doc.<Long>getProperty("$returnedHits")).isEqualTo(returnedHits);
-    assertThat(doc.<Long>getProperty("$Song_title_returnedHits")).isEqualTo(returnedHits);
+    assertThat(doc.<Long>getProperty("$maxReturnedHits")).isEqualTo(returnedHits);
+    assertThat(doc.<Long>getProperty("$Song_title_maxReturnedHits")).isEqualTo(returnedHits);
     docs.close();
   }
 }

@@ -120,7 +120,7 @@ public class OLuceneResultSet {
 
   private class OLuceneResultSetSpliteratorTx implements Spliterator<OIdentifiable> {
 
-    private final long returnedHits;
+    private final long maxReturnedHits;
     private final HashSet<String> distinctIds;
 
     private ScoreDoc[] scoreDocs;
@@ -158,9 +158,9 @@ public class OLuceneResultSet {
           resultHits = hardLimit;
         }
       }
-      this.returnedHits = resultHits;
+      this.maxReturnedHits = resultHits;
       OLuceneIndexEngineUtils.sendTotalHits(
-          indexName, queryContext.getContext(), totalHits, returnedHits);
+          indexName, queryContext.getContext(), totalHits, maxReturnedHits);
 
       distinctIds = (distinctKey == null) ? null : new HashSet<>((int) Math.min(1000, resultHits));
     }
@@ -178,7 +178,7 @@ public class OLuceneResultSet {
       if (closed) {
         throw new IllegalStateException("ResultSet is closed");
       }
-      final boolean hasNext = (index < returnedHits);
+      final boolean hasNext = (index < maxReturnedHits);
       if (!hasNext) {
         return false;
       }
@@ -206,7 +206,7 @@ public class OLuceneResultSet {
 
     @Override
     public long estimateSize() {
-      return (distinctIds == null) ? returnedHits : Long.MAX_VALUE;
+      return (distinctIds == null) ? maxReturnedHits : Long.MAX_VALUE;
     }
 
     @Override
@@ -220,7 +220,7 @@ public class OLuceneResultSet {
       }
       if (localIndex == scoreDocs.length) {
         localIndex = 0;
-        fetchMoreResult(scoreDocs[scoreDocs.length - 1], returnedHits - index);
+        fetchMoreResult(scoreDocs[scoreDocs.length - 1], maxReturnedHits - index);
         if (scoreDocs.length == 0) {
           return null;
         }
