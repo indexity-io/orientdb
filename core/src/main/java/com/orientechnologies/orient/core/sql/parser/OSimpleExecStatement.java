@@ -26,7 +26,7 @@ public abstract class OSimpleExecStatement extends OStatement {
 
   public abstract OResultSet executeSimple(OCommandContext ctx);
 
-  public OResultSet execute(
+  public OResultSet doExecute(
       ODatabaseSession db, Map params, OCommandContext parentContext, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentContext != null) {

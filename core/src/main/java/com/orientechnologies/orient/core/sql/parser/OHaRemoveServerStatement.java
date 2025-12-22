@@ -35,7 +35,7 @@ public class OHaRemoveServerStatement extends OStatement {
   }
 
   @Override
-  public OResultSet execute(
+  public OResultSet doExecute(
       ODatabaseSession db, Map args, OCommandContext parentContext, boolean usePlanCache) {
     ODatabaseDocumentInternal internalDb = (ODatabaseDocumentInternal) db;
     boolean res = internalDb.removeHaServer(serverName.getStringValue());

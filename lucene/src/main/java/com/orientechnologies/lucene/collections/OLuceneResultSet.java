@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
@@ -273,7 +274,9 @@ public class OLuceneResultSet {
     }
 
     private TopDocs fetchMoreResult(ScoreDoc after, long maxHits) {
-      try (final Timer.Context fetch = engine.fetch()) {
+      @SuppressWarnings("resource")
+      final Timer.Context fetchTimer = engine.fetch();
+      try {
         final TopDocs topDocs;
         final IndexSearcher searcher = queryContext.getSearcher();
         int pageSize =
@@ -295,6 +298,17 @@ public class OLuceneResultSet {
         throw new OLuceneIndexException(
             String.format(
                 "Error on fetching document by query '%s' to Lucene index", reportQueryAs));
+
+      } finally {
+        final long duration = TimeUnit.NANOSECONDS.toMillis(fetchTimer.stop());
+        if (duration > OGlobalConfiguration.SLOW_QUERY_TIME.getValueAsLong()) {
+          OLogManager.instance()
+              .warn(
+                  this,
+                  "Slow query execution took %d ms. Lucene query is: %s",
+                  duration,
+                  reportQueryAs);
+        }
       }
     }
 

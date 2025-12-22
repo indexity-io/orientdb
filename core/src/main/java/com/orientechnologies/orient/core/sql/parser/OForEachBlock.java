@@ -41,7 +41,7 @@ public class OForEachBlock extends OStatement {
   }
 
   @Override
-  public OResultSet execute(
+  public OResultSet doExecute(
       ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {

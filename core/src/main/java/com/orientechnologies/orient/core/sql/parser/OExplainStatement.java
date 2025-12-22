@@ -36,7 +36,7 @@ public class OExplainStatement extends OStatement {
   }
 
   @Override
-  public OResultSet execute(
+  public OResultSet doExecute(
       ODatabaseSession db, Map args, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {

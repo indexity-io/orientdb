@@ -4,7 +4,9 @@ package com.orientechnologies.orient.core.sql.parser;
 
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.listener.OProgressListener;
+import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.command.OCommandContext;
+import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.record.impl.ODocument;
@@ -97,7 +99,25 @@ public class OStatement extends SimpleNode {
     return execute(db, args, null, usePlanCache);
   }
 
-  public OResultSet execute(
+  public final OResultSet execute(
+      ODatabaseSession db, Map args, OCommandContext parentContext, boolean usePlanCache) {
+    final long start = System.currentTimeMillis();
+    try {
+      return doExecute(db, args, parentContext, usePlanCache);
+    } finally {
+      final long duration = System.currentTimeMillis() - start;
+      if (duration > OGlobalConfiguration.SLOW_QUERY_TIME.getValueAsLong()) {
+        OLogManager.instance()
+            .warn(
+                this,
+                "Slow query execution took %d ms. Query is: %s",
+                duration,
+                toGenericStatement());
+      }
+    }
+  }
+
+  protected OResultSet doExecute(
       ODatabaseSession db, Map args, OCommandContext parentContext, boolean usePlanCache) {
     throw new UnsupportedOperationException();
   }
