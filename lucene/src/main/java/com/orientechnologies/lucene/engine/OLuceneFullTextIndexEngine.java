@@ -62,7 +62,8 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.store.Directory;
 
-public class OLuceneFullTextIndexEngine extends OLuceneIndexEngineAbstract {
+public class OLuceneFullTextIndexEngine extends OLuceneIndexEngineAbstract
+    implements OLuceneEngineMXBean {
 
   private final OLuceneDocumentBuilder builder;
   private OLuceneQueryBuilder queryBuilder;

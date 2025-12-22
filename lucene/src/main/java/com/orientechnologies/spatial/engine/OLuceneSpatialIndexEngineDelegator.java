@@ -14,6 +14,7 @@
  */
 package com.orientechnologies.spatial.engine;
 
+import com.codahale.metrics.Timer;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.util.ORawPair;
 import com.orientechnologies.lucene.engine.OLuceneIndexEngine;
@@ -346,5 +347,30 @@ public class OLuceneSpatialIndexEngineDelegator
 
   public OLuceneIndexEngine getDelegate() {
     return delegate;
+  }
+
+  @Override
+  public Timer.Context fetch() {
+    return delegate.fetch();
+  }
+
+  @Override
+  public void recordHits(long totalHits, long maxHits) {
+    delegate.recordHits(totalHits, maxHits);
+  }
+
+  @Override
+  public void recordFetchedHits(long fetchedHits, long returnedHits) {
+    delegate.recordFetchedHits(fetchedHits, returnedHits);
+  }
+
+  @Override
+  public void recordSoftLimitExceeded() {
+    delegate.recordSoftLimitExceeded();
+  }
+
+  @Override
+  public void recordHardLimitExceeded() {
+    delegate.recordHardLimitExceeded();
   }
 }

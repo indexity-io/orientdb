@@ -18,6 +18,7 @@
 
 package com.orientechnologies.lucene.engine;
 
+import com.codahale.metrics.Timer;
 import com.orientechnologies.lucene.query.OLuceneQueryContext;
 import com.orientechnologies.lucene.tx.OLuceneTxChanges;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
@@ -65,4 +66,14 @@ public interface OLuceneIndexEngine extends OIndexEngine, OFreezableStorageCompo
   Query deleteQuery(Object key, OIdentifiable value);
 
   boolean isCollectionIndex();
+
+  Timer.Context fetch();
+
+  void recordHits(long totalHits, long maxHits);
+
+  void recordFetchedHits(long fetchedHits, long returnedHits);
+
+  void recordSoftLimitExceeded();
+
+  void recordHardLimitExceeded();
 }
