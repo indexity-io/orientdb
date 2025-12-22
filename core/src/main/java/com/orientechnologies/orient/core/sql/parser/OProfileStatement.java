@@ -12,7 +12,6 @@ import com.orientechnologies.orient.core.sql.executor.OExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.executor.OUpdateExecutionPlan;
-import java.util.HashMap;
 import java.util.Map;
 
 public class OProfileStatement extends OStatement {
@@ -41,17 +40,13 @@ public class OProfileStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
+      ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     ((ODatabaseInternal) db).resetRecordLoadStats();
     OBasicCommandContext ctx = new OBasicCommandContext();
     if (parentCtx != null) {
       ctx.setParentWithoutOverridingChild(parentCtx);
     }
     ctx.setDatabase(db);
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) params.put(i, args[i]);
-    }
     ctx.setInputParameters(params);
 
     OExecutionPlan executionPlan;
@@ -64,41 +59,6 @@ public class OProfileStatement extends OStatement {
     if (executionPlan instanceof OUpdateExecutionPlan) {
       ((OUpdateExecutionPlan) executionPlan).executeInternal();
     }
-
-    OLocalResultSet rs = new OLocalResultSet((OInternalExecutionPlan) executionPlan);
-
-    while (rs.hasNext()) {
-      rs.next();
-    }
-    ODatabaseStats dbStats = ((ODatabaseInternal) db).getStats();
-    OExplainResultSet result =
-        new OExplainResultSet(
-            rs.getExecutionPlan()
-                .orElseThrow(
-                    () -> new OCommandExecutionException("Cannot profile command: " + statement)),
-            dbStats);
-    rs.close();
-    return result;
-  }
-
-  @Override
-  public OResultSet execute(
-      ODatabaseSession db, Map args, OCommandContext parentCtx, boolean usePlanCache) {
-    ((ODatabaseInternal) db).resetRecordLoadStats();
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    if (parentCtx != null) {
-      ctx.setParentWithoutOverridingChild(parentCtx);
-    }
-    ctx.setDatabase(db);
-    ctx.setInputParameters(args);
-
-    OExecutionPlan executionPlan;
-    if (usePlanCache) {
-      executionPlan = statement.createExecutionPlan(ctx, true);
-    } else {
-      executionPlan = statement.createExecutionPlanNoCache(ctx, true);
-    }
-
     OLocalResultSet rs = new OLocalResultSet((OInternalExecutionPlan) executionPlan);
 
     while (rs.hasNext()) {

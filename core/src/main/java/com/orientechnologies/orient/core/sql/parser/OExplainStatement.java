@@ -9,7 +9,6 @@ import com.orientechnologies.orient.core.db.ODatabaseStats;
 import com.orientechnologies.orient.core.sql.executor.OExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
-import java.util.HashMap;
 import java.util.Map;
 
 public class OExplainStatement extends OStatement {
@@ -34,31 +33,6 @@ public class OExplainStatement extends OStatement {
   public void toGenericStatement(StringBuilder builder) {
     builder.append("EXPLAIN ");
     statement.toGenericStatement(builder);
-  }
-
-  @Override
-  public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    if (parentCtx != null) {
-      ctx.setParentWithoutOverridingChild(parentCtx);
-    }
-    ctx.setDatabase(db);
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) params.put(i, args[i]);
-    }
-    ctx.setInputParameters(params);
-
-    OExecutionPlan executionPlan;
-    if (usePlanCache) {
-      executionPlan = statement.createExecutionPlan(ctx, false);
-    } else {
-      executionPlan = statement.createExecutionPlanNoCache(ctx, false);
-    }
-
-    OExplainResultSet result = new OExplainResultSet(executionPlan, new ODatabaseStats());
-    return result;
   }
 
   @Override

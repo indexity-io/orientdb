@@ -6,7 +6,6 @@ import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.executor.OSingleOpExecutionPlan;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -26,24 +25,6 @@ public abstract class OSimpleExecStatement extends OStatement {
   }
 
   public abstract OResultSet executeSimple(OCommandContext ctx);
-
-  public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentContext, boolean usePlanCache) {
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    if (parentContext != null) {
-      ctx.setParentWithoutOverridingChild(parentContext);
-    }
-    ctx.setDatabase(db);
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) {
-        params.put(i, args[i]);
-      }
-    }
-    ctx.setInputParameters(params);
-    OSingleOpExecutionPlan executionPlan = (OSingleOpExecutionPlan) createExecutionPlan(ctx, false);
-    return executionPlan.executeInternal(ctx);
-  }
 
   public OResultSet execute(
       ODatabaseSession db, Map params, OCommandContext parentContext, boolean usePlanCache) {

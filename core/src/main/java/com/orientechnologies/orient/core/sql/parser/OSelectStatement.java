@@ -16,7 +16,6 @@ import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.executor.OSelectExecutionPlanner;
 import com.orientechnologies.orient.core.storage.OStorage;
-import java.util.HashMap;
 import java.util.Map;
 
 public class OSelectStatement extends OStatement {
@@ -330,32 +329,6 @@ public class OSelectStatement extends OStatement {
     }
 
     return true;
-  }
-
-  @Override
-  public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    if (parentCtx != null) {
-      ctx.setParentWithoutOverridingChild(parentCtx);
-    }
-    ctx.setDatabase(db);
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) {
-        params.put(i, args[i]);
-      }
-    }
-    ctx.setInputParameters(params);
-    OInternalExecutionPlan executionPlan;
-    if (usePlanCache) {
-      executionPlan = createExecutionPlan(ctx, false);
-    } else {
-      executionPlan = createExecutionPlanNoCache(ctx, false);
-    }
-
-    OLocalResultSet result = new OLocalResultSet(executionPlan);
-    return result;
   }
 
   @Override

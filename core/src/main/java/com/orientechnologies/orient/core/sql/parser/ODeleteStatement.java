@@ -8,7 +8,6 @@ import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.ODeleteExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.ODeleteExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
-import java.util.HashMap;
 import java.util.Map;
 
 public class ODeleteStatement extends OStatement {
@@ -110,31 +109,6 @@ public class ODeleteStatement extends OStatement {
       ctx.setParentWithoutOverridingChild(parentCtx);
     }
     ctx.setDatabase(db);
-    ctx.setInputParameters(params);
-    ODeleteExecutionPlan executionPlan;
-    if (usePlanCache) {
-      executionPlan = createExecutionPlan(ctx, false);
-    } else {
-      executionPlan = (ODeleteExecutionPlan) createExecutionPlanNoCache(ctx, false);
-    }
-    executionPlan.executeInternal();
-    return new OLocalResultSet(executionPlan);
-  }
-
-  @Override
-  public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    if (parentCtx != null) {
-      ctx.setParentWithoutOverridingChild(parentCtx);
-    }
-    ctx.setDatabase(db);
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) {
-        params.put(i, args[i]);
-      }
-    }
     ctx.setInputParameters(params);
     ODeleteExecutionPlan executionPlan;
     if (usePlanCache) {

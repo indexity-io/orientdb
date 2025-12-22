@@ -10,7 +10,6 @@ import com.orientechnologies.orient.core.sql.executor.OUpdateExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OUpdateExecutionPlanner;
 import com.orientechnologies.orient.core.storage.OStorage;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -189,32 +188,6 @@ public class OUpdateStatement extends OStatement {
     return result;
   }
 
-  @Override
-  public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    if (parentCtx != null) {
-      ctx.setParentWithoutOverridingChild(parentCtx);
-    }
-    ctx.setDatabase(db);
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) {
-        params.put(i, args[i]);
-      }
-    }
-    ctx.setInputParameters(params);
-    OUpdateExecutionPlan executionPlan;
-    if (usePlanCache) {
-      executionPlan = createExecutionPlan(ctx, false);
-    } else {
-      executionPlan = (OUpdateExecutionPlan) createExecutionPlanNoCache(ctx, false);
-    }
-    executionPlan.executeInternal();
-    return new OLocalResultSet(executionPlan);
-  }
-
-  @Override
   public OResultSet execute(
       ODatabaseSession db, Map params, OCommandContext parentCtx, boolean usePlanCache) {
     OBasicCommandContext ctx = new OBasicCommandContext();
