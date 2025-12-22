@@ -19,6 +19,10 @@ package com.orientechnologies.lucene.engine;
 import static com.orientechnologies.lucene.analyzer.OLuceneAnalyzerFactory.AnalyzerKind.INDEX;
 import static com.orientechnologies.lucene.analyzer.OLuceneAnalyzerFactory.AnalyzerKind.QUERY;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.io.OFileUtils;
 import com.orientechnologies.common.log.OLogManager;
@@ -34,6 +38,7 @@ import com.orientechnologies.orient.core.config.IndexEngineData;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.exception.OConfigurationException;
 import com.orientechnologies.orient.core.exception.OStorageException;
 import com.orientechnologies.orient.core.id.OContextualRecordId;
 import com.orientechnologies.orient.core.id.ORID;
@@ -50,6 +55,7 @@ import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedSt
 import com.orientechnologies.orient.core.storage.impl.local.paginated.atomicoperations.OAtomicOperation;
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -57,6 +63,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -77,7 +85,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 
-public abstract class OLuceneIndexEngineAbstract implements OLuceneIndexEngine {
+public abstract class OLuceneIndexEngineAbstract
+    implements OLuceneIndexEngine, OLuceneEngineMXBean {
 
   public static final String RID = "RID";
   public static final String KEY = "KEY";
@@ -113,6 +122,8 @@ public abstract class OLuceneIndexEngineAbstract implements OLuceneIndexEngine {
     lastAccess = new AtomicLong(System.currentTimeMillis());
 
     closed = new AtomicBoolean(true);
+
+    registerJMX();
   }
 
   @Override
@@ -541,6 +552,8 @@ public abstract class OLuceneIndexEngineAbstract implements OLuceneIndexEngine {
     if (closed.get()) return;
 
     try {
+      deregisterJMX();
+
       cancelCommitTask();
 
       closeNRT();
@@ -652,5 +665,117 @@ public abstract class OLuceneIndexEngineAbstract implements OLuceneIndexEngine {
     } catch (IOException e) {
       OLogManager.instance().error(this, "Error on releasing Lucene index:: " + indexName(), e);
     }
+  }
+
+  private final MetricRegistry metrics = new MetricRegistry();
+  private final Timer fetch = metrics.timer(MetricRegistry.name(getClass(), "fetchTime"));
+  private final Counter softLimitExceeded =
+      metrics.counter(MetricRegistry.name(getClass(), "softLimitExceeded"));
+  private final Counter hardLimitExceeded =
+      metrics.counter(MetricRegistry.name(getClass(), "hardLimitExceeded"));
+  private final Histogram maxHits = metrics.histogram(MetricRegistry.name(getClass(), "maxHits"));
+  private final Histogram totalHits =
+      metrics.histogram(MetricRegistry.name(getClass(), "totalHits"));
+  private final Histogram fetchedHits =
+      metrics.histogram(MetricRegistry.name(getClass(), "fetchedHits"));
+  private final Histogram returnedHits =
+      metrics.histogram(MetricRegistry.name(getClass(), "returnedHits"));
+
+  private final String BASE_JMX_NAME = "com.orientechnologies:type=" + getClass().getSimpleName();
+  private ObjectName indexName;
+
+  private void registerJMX() {
+    // HACK: sync to avoid JMX races on embedded tests, although JMX should only be used in server
+    // mode
+    synchronized (OLuceneIndexEngineAbstract.class) {
+      final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+      try {
+        indexName = new ObjectName(BASE_JMX_NAME + ",name=" + getName());
+        if (mBeanServer.isRegistered(indexName)) {
+          mBeanServer.unregisterMBean(indexName);
+        }
+        mBeanServer.registerMBean((OLuceneEngineMXBean) this, indexName);
+      } catch (Exception e) {
+        throw OException.wrapException(
+            new OConfigurationException("Cannot initialize Lucene Index JMX server"), e);
+      }
+    }
+  }
+
+  private void deregisterJMX() {
+    synchronized (OLuceneIndexEngineAbstract.class) {
+      final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+      if (indexName != null) {
+        try {
+          if (mBeanServer.isRegistered(indexName)) {
+            mBeanServer.unregisterMBean(indexName);
+          }
+        } catch (Exception e) {
+          OLogManager.instance().error(this, "Cannot deregister Lucene Index JMX server", e);
+        }
+      }
+    }
+  }
+
+  @Override
+  public Timer.Context fetch() {
+    return fetch.time();
+  }
+
+  @Override
+  public void recordHits(long totalHits, long maxHits) {
+    this.totalHits.update(totalHits);
+    this.maxHits.update(maxHits);
+  }
+
+  @Override
+  public void recordFetchedHits(long fetchedHits, long returnedHits) {
+    this.fetchedHits.update(fetchedHits);
+    this.returnedHits.update(returnedHits);
+  }
+
+  @Override
+  public void recordHardLimitExceeded() {
+    hardLimitExceeded.inc();
+  }
+
+  @Override
+  public void recordSoftLimitExceeded() {
+    softLimitExceeded.inc();
+  }
+
+  @Override
+  public JmxTimer getFetch() {
+    return new JmxTimer(fetch);
+  }
+
+  @Override
+  public JmxHistogram getTotalHits() {
+    return new JmxHistogram(totalHits);
+  }
+
+  @Override
+  public JmxHistogram getMaxHits() {
+    return new JmxHistogram(maxHits);
+  }
+
+  @Override
+  public JmxHistogram getFetchedHits() {
+    return new JmxHistogram(fetchedHits);
+  }
+
+  @Override
+  public JmxHistogram getReturnedHits() {
+    return new JmxHistogram(returnedHits);
+  }
+
+  @Override
+  public long getSoftLimitExceeded() {
+    return softLimitExceeded.getCount();
+  }
+
+  @Override
+  public long getHardLimitExceeded() {
+    return hardLimitExceeded.getCount();
   }
 }

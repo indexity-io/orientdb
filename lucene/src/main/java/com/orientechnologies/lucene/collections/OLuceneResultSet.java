@@ -18,6 +18,7 @@
 
 package com.orientechnologies.lucene.collections;
 
+import com.codahale.metrics.Timer;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.stream.OStream;
@@ -139,6 +140,7 @@ public class OLuceneResultSet {
       final long hardLimit = OGlobalConfiguration.LUCENE_RESULTS_HARD_LIMIT.getValueAsLong();
       long resultHits = Math.max(0, Math.min(maxHits, totalHits));
       if (resultHits > softLimit) {
+        engine.recordSoftLimitExceeded();
         OLogManager.instance()
             .warn(
                 this,
@@ -148,6 +150,7 @@ public class OLuceneResultSet {
                 softLimit);
       } else {
         if (resultHits > hardLimit) {
+          engine.recordHardLimitExceeded();
           OLogManager.instance()
               .warn(
                   this,
@@ -159,6 +162,7 @@ public class OLuceneResultSet {
         }
       }
       this.maxReturnedHits = resultHits;
+      engine.recordHits(totalHits, maxReturnedHits);
       OLuceneIndexEngineUtils.sendTotalHits(
           indexName, queryContext.getContext(), totalHits, maxReturnedHits);
 
@@ -170,6 +174,8 @@ public class OLuceneResultSet {
         final IndexSearcher searcher = queryContext.getSearcher();
         engine.release(searcher);
         closed = true;
+        final long fetchedHits = index + scoreDocs.length - localIndex;
+        engine.recordFetchedHits(fetchedHits, index);
       }
     }
 
@@ -267,7 +273,7 @@ public class OLuceneResultSet {
     }
 
     private TopDocs fetchMoreResult(ScoreDoc after, long maxHits) {
-      try {
+      try (final Timer.Context fetch = engine.fetch()) {
         final TopDocs topDocs;
         final IndexSearcher searcher = queryContext.getSearcher();
         int pageSize =
