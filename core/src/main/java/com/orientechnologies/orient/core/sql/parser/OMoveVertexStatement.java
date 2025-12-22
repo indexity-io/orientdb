@@ -8,7 +8,6 @@ import com.orientechnologies.orient.core.db.ODatabaseSession;
 import com.orientechnologies.orient.core.sql.executor.OMoveVertexExecutionPlanner;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.executor.OUpdateExecutionPlan;
-import java.util.HashMap;
 import java.util.Map;
 
 public class OMoveVertexStatement extends OStatement {
@@ -24,18 +23,6 @@ public class OMoveVertexStatement extends OStatement {
 
   public OMoveVertexStatement(OrientSql p, int id) {
     super(p, id);
-  }
-
-  @Override
-  public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) {
-        params.put(i, args[i]);
-      }
-    }
-    return execute(db, params, parentCtx, usePlanCache);
   }
 
   @Override

@@ -13,7 +13,6 @@ import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.executor.OSelectExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OUpdateExecutionPlan;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -59,45 +58,6 @@ public class OIfStatement extends OStatement {
       }
     }
     return true;
-  }
-
-  @Override
-  public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    if (parentCtx != null) {
-      ctx.setParentWithoutOverridingChild(parentCtx);
-    }
-    ctx.setDatabase(db);
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) {
-        params.put(i, args[i]);
-      }
-    }
-    ctx.setInputParameters(params);
-
-    OIfExecutionPlan executionPlan;
-    if (usePlanCache) {
-      executionPlan = createExecutionPlan(ctx, false);
-    } else {
-      executionPlan = (OIfExecutionPlan) createExecutionPlanNoCache(ctx, false);
-    }
-
-    OExecutionStepInternal last = executionPlan.executeUntilReturn();
-    if (last == null) {
-      last = new EmptyStep(ctx, false);
-    }
-    if (isIdempotent()) {
-      OSelectExecutionPlan finalPlan = new OSelectExecutionPlan(ctx);
-      finalPlan.chain(last);
-      return new OLocalResultSet(finalPlan);
-    } else {
-      OUpdateExecutionPlan finalPlan = new OUpdateExecutionPlan(ctx);
-      finalPlan.chain(last);
-      finalPlan.executeInternal();
-      return new OLocalResultSet(finalPlan);
-    }
   }
 
   @Override

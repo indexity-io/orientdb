@@ -36,18 +36,6 @@ public class OHaRemoveServerStatement extends OStatement {
 
   @Override
   public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentContext, boolean usePlanCache) {
-    ODatabaseDocumentInternal internalDb = (ODatabaseDocumentInternal) db;
-    boolean res = internalDb.removeHaServer(serverName.getStringValue());
-    OResultInternal r = new OResultInternal();
-    r.setProperty("result", res);
-    OInternalResultSet rs = new OInternalResultSet();
-    rs.add(r);
-    return rs;
-  }
-
-  @Override
-  public OResultSet execute(
       ODatabaseSession db, Map args, OCommandContext parentContext, boolean usePlanCache) {
     ODatabaseDocumentInternal internalDb = (ODatabaseDocumentInternal) db;
     boolean res = internalDb.removeHaServer(serverName.getStringValue());

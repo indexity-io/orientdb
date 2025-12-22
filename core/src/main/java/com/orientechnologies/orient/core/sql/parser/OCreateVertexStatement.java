@@ -9,7 +9,6 @@ import com.orientechnologies.orient.core.sql.executor.OCreateVertexExecutionPlan
 import com.orientechnologies.orient.core.sql.executor.OInsertExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OInternalExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
-import java.util.HashMap;
 import java.util.Map;
 
 public class OCreateVertexStatement extends OStatement {
@@ -36,31 +35,6 @@ public class OCreateVertexStatement extends OStatement {
       ctx.setParentWithoutOverridingChild(parentCtx);
     }
     ctx.setDatabase(db);
-    ctx.setInputParameters(params);
-    OInsertExecutionPlan executionPlan;
-    if (usePlanCache) {
-      executionPlan = (OInsertExecutionPlan) createExecutionPlan(ctx, false);
-    } else {
-      executionPlan = (OInsertExecutionPlan) createExecutionPlanNoCache(ctx, false);
-    }
-    executionPlan.executeInternal();
-    return new OLocalResultSet(executionPlan);
-  }
-
-  @Override
-  public OResultSet execute(
-      ODatabaseSession db, Object[] args, OCommandContext parentCtx, boolean usePlanCache) {
-    OBasicCommandContext ctx = new OBasicCommandContext();
-    if (parentCtx != null) {
-      ctx.setParentWithoutOverridingChild(parentCtx);
-    }
-    ctx.setDatabase(db);
-    Map<Object, Object> params = new HashMap<>();
-    if (args != null) {
-      for (int i = 0; i < args.length; i++) {
-        params.put(i, args[i]);
-      }
-    }
     ctx.setInputParameters(params);
     OInsertExecutionPlan executionPlan;
     if (usePlanCache) {

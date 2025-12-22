@@ -14,6 +14,7 @@ import com.orientechnologies.orient.core.sql.executor.OResult;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
+import java.util.HashMap;
 import java.util.Map;
 
 public class OStatement extends SimpleNode {
@@ -56,32 +57,43 @@ public class OStatement extends SimpleNode {
     throw new UnsupportedOperationException("Unsupported command: " + getClass().getSimpleName());
   }
 
-  public OResultSet execute(ODatabaseSession db, Object[] args) {
+  public final OResultSet execute(ODatabaseSession db, Object[] args) {
     return execute(db, args, true);
   }
 
-  public OResultSet execute(ODatabaseSession db, Object[] args, OCommandContext parentContext) {
+  public final OResultSet execute(
+      ODatabaseSession db, Object[] args, OCommandContext parentContext) {
     return execute(db, args, parentContext, true);
   }
 
-  public OResultSet execute(ODatabaseSession db, Map args) {
+  public final OResultSet execute(ODatabaseSession db, Map args) {
     return execute(db, args, true);
   }
 
-  public OResultSet execute(ODatabaseSession db, Map args, OCommandContext parentContext) {
+  public final OResultSet execute(ODatabaseSession db, Map args, OCommandContext parentContext) {
     return execute(db, args, parentContext, true);
   }
 
-  public OResultSet execute(ODatabaseSession db, Object[] args, boolean usePlanCache) {
+  public final OResultSet execute(ODatabaseSession db, Object[] args, boolean usePlanCache) {
     return execute(db, args, null, usePlanCache);
   }
 
-  public OResultSet execute(
+  public final OResultSet execute(
       ODatabaseSession db, Object[] args, OCommandContext parentContext, boolean usePlanCache) {
-    throw new UnsupportedOperationException();
+    return execute(db, indexParams(args), parentContext, usePlanCache);
   }
 
-  public OResultSet execute(ODatabaseSession db, Map args, boolean usePlanCache) {
+  static Map<Object, Object> indexParams(Object[] args) {
+    Map<Object, Object> params = new HashMap<>();
+    if (args != null) {
+      for (int i = 0; i < args.length; i++) {
+        params.put(i, args[i]);
+      }
+    }
+    return params;
+  }
+
+  public final OResultSet execute(ODatabaseSession db, Map args, boolean usePlanCache) {
     return execute(db, args, null, usePlanCache);
   }
 
