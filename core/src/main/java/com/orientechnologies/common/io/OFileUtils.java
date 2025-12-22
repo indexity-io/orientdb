@@ -22,6 +22,7 @@ package com.orientechnologies.common.io;
 import com.orientechnologies.common.log.OLogManager;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -193,7 +194,12 @@ public class OFileUtils {
       throws IOException {
     if (!destination.exists()) destination.mkdirs();
 
-    for (File f : source.listFiles()) {
+    final File[] files = source.listFiles();
+    if (files == null) {
+      throw new FileNotFoundException(
+          "Source directory '" + source + "' does not exist or cannot be read.");
+    }
+    for (File f : files) {
       final File target = new File(destination.getAbsolutePath() + "/" + f.getName());
       if (f.isFile()) copyFile(f, target);
       else copyDirectory(f, target);
