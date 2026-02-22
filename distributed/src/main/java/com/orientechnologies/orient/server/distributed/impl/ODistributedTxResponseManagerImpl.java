@@ -1,5 +1,6 @@
 package com.orientechnologies.orient.server.distributed.impl;
 
+import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.server.distributed.ODistributedException;
 import com.orientechnologies.orient.server.distributed.ODistributedRequestId;
 import com.orientechnologies.orient.server.distributed.ODistributedResponse;
@@ -51,11 +52,30 @@ public class ODistributedTxResponseManagerImpl implements ODistributedTxResponse
     this.expectedResponses = expectedResponses;
     this.quorum = quorum;
     timeout = iRequest.getSynchronousTimeout(expectedResponses);
+
+    OLogManager.instance()
+        .debug(
+            this,
+            "[%s] Initializing distributed tx response mgr sending %s to %d nodes at quorum [%d/%d/%d|%s]",
+            requestId(),
+            iRequest.getName(),
+            nodesConcurToTheQuorum.size(),
+            quorum,
+            expectedResponses,
+            availableNodes,
+            iRequest.getQuorumType());
   }
 
   @Override
   public synchronized boolean setLocalResult(String localNodeName, Object localResult) {
     debugNodeReplied.add(localNodeName);
+    OLogManager.instance()
+        .debug(
+            this,
+            "[%s] Received local result %s from node %s",
+            requestId(),
+            localResult,
+            localNodeName);
     return addResult(localNodeName, (OTransactionResultPayload) localResult);
   }
 
@@ -152,6 +172,13 @@ public class ODistributedTxResponseManagerImpl implements ODistributedTxResponse
     List<OTransactionResultPayload> results = new ArrayList<>();
 
     if (nodesConcurToTheQuorum.contains(senderNodeName)) {
+      OLogManager.instance()
+          .debug(
+              this,
+              "[%s] Received %s response from %s",
+              requestId(),
+              result.getResponseType(),
+              senderNodeName);
       results = resultsByType.get(result.getResponseType());
       if (results == null) {
         results = new ArrayList<>();
@@ -165,6 +192,10 @@ public class ODistributedTxResponseManagerImpl implements ODistributedTxResponse
     responseCount += 1;
     checkFinished(results);
     return this.finished;
+  }
+
+  private String requestId() {
+    return Long.toHexString(System.identityHashCode(this));
   }
 
   private void checkFinished(List<OTransactionResultPayload> results) {
@@ -187,6 +218,17 @@ public class ODistributedTxResponseManagerImpl implements ODistributedTxResponse
         this.notifyAll();
       }
     }
+    OLogManager.instance()
+        .debug(
+            this,
+            "[%s] Response status: responseCount=%d/%d, quorumReached=%s[%d/%d], finished=%s",
+            requestId(),
+            responseCount,
+            expectedResponses,
+            quorumReached,
+            results.size(),
+            quorum,
+            finished);
   }
 
   @Override
