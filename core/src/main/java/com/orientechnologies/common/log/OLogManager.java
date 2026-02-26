@@ -25,6 +25,7 @@ import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.storage.impl.local.OAbstractPaginatedStorage;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -82,19 +83,25 @@ public class OLogManager {
     if (!installCustomFormatter) return;
 
     try {
+      // Set internal level to finest level in logging config
+      final Enumeration<String> loggerNames = LogManager.getLogManager().getLoggerNames();
+      while (loggerNames.hasMoreElements()) {
+        final String loggerName = loggerNames.nextElement();
+        final Logger log = LogManager.getLogManager().getLogger(loggerName);
+        if (log == null) continue;
+        setLevelInternal(log.getLevel());
+      }
+
       // ASSURE TO HAVE THE ORIENT LOG FORMATTER TO THE CONSOLE EVEN IF NO CONFIGURATION FILE IS
       // TAKEN
-      final Logger log = Logger.getLogger("");
-
-      setLevelInternal(log.getLevel());
-
-      if (log.getHandlers().length == 0) {
+      final Logger rootLog = Logger.getLogger("");
+      if (rootLog.getHandlers().length == 0) {
         // SET DEFAULT LOG FORMATTER
         final Handler h = new ConsoleHandler();
         h.setFormatter(new OAnsiLogFormatter());
-        log.addHandler(h);
+        rootLog.addHandler(h);
       } else {
-        for (Handler h : log.getHandlers()) {
+        for (Handler h : rootLog.getHandlers()) {
           if (h instanceof ConsoleHandler
               && !h.getFormatter().getClass().equals(OAnsiLogFormatter.class))
             h.setFormatter(new OAnsiLogFormatter());
@@ -368,12 +375,7 @@ public class OLogManager {
     final Level level =
         iLevel != null ? Level.parse(iLevel.toUpperCase(Locale.ENGLISH)) : Level.INFO;
 
-    if (level.intValue() < minimumLevel.intValue()) {
-      // UPDATE MINIMUM LEVEL
-      minimumLevel = level;
-
-      setLevelInternal(level);
-    }
+    setLevelInternal(level);
 
     Logger log = Logger.getLogger(DEFAULT_LOG);
     while (log != null) {
@@ -392,7 +394,8 @@ public class OLogManager {
   }
 
   protected void setLevelInternal(final Level level) {
-    if (level == null) return;
+    if (level == null || level.intValue() >= minimumLevel.intValue()) return;
+    minimumLevel = level;
 
     if (level.equals(Level.FINER) || level.equals(Level.FINE) || level.equals(Level.FINEST))
       debug = info = warn = error = true;
