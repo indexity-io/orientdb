@@ -75,7 +75,7 @@ public class ODistributedTxResponseManagerImpl implements ODistributedTxResponse
             this,
             "[%s] Received local result %s from node %s",
             requestId(),
-            localResult,
+            localResult.getClass().getSimpleName(),
             localNodeName);
     return addResult(localNodeName, (OTransactionResultPayload) localResult);
   }
@@ -178,7 +178,7 @@ public class ODistributedTxResponseManagerImpl implements ODistributedTxResponse
               this,
               "[%s] Received %s response from %s",
               requestId(),
-              result.getResponseType(),
+              result.getClass().getSimpleName(),
               senderNodeName);
       results = resultsByType.get(result.getResponseType());
       if (results == null) {

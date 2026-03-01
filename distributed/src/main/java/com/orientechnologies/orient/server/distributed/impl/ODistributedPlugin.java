@@ -641,7 +641,12 @@ public class ODistributedPlugin extends OServerPluginAbstract
                   ODistributedServerManager.DB_STATUS.ONLINE,
                   ODistributedServerManager.DB_STATUS.BACKUP,
                   ODistributedServerManager.DB_STATUS.SYNCHRONIZING);
-          OLogManager.instance().debug(this, "Available nodes filtered to online for db[%s]: %s", databaseName, availableNodes);
+          OLogManager.instance()
+              .debug(
+                  this,
+                  "Available nodes filtered to online for db[%s]: %s",
+                  databaseName,
+                  availableNodes);
         }
 
         // all online masters
