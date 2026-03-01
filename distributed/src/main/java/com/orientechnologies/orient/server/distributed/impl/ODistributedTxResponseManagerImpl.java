@@ -56,14 +56,15 @@ public class ODistributedTxResponseManagerImpl implements ODistributedTxResponse
     OLogManager.instance()
         .debug(
             this,
-            "[%s] Initializing distributed tx response mgr sending %s to %d nodes at quorum [%d/%d/%d|%s]",
+            "[%s] Initializing distributed tx response mgr sending %s to %d nodes at quorum [%d/%d/%d|%s]\n  Target nodes=%s",
             requestId(),
             iRequest.getName(),
             nodesConcurToTheQuorum.size(),
             quorum,
             expectedResponses,
             availableNodes,
-            iRequest.getQuorumType());
+            iRequest.getQuorumType(),
+            iNodes);
   }
 
   @Override

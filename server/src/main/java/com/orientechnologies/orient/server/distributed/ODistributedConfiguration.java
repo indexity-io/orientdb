@@ -304,15 +304,24 @@ public class ODistributedConfiguration {
    * @param iClusterNames Collection of cluster names to find
    */
   public Set<String> getServers(Collection<String> iClusterNames) {
-    if (iClusterNames == null || iClusterNames.isEmpty()) return getAllConfiguredServers();
+    if (iClusterNames == null || iClusterNames.isEmpty()) {
+      Set<String> allConfiguredServers = getAllConfiguredServers();
+      OLogManager.instance()
+          .debug(this, "No cluster names specified, using all servers: %s ", allConfiguredServers);
+      return allConfiguredServers;
+    }
 
     final Set<String> partitions = new HashSet<String>(iClusterNames.size());
     for (String p : iClusterNames) {
-      final List<String> serverList = getClusterConfiguration(p).field(SERVERS);
+      ODocument clusterConfiguration = getClusterConfiguration(p);
+      OLogManager.instance().debug(this, "Cluster config [%s]: %s", p, clusterConfiguration);
+      final List<String> serverList = clusterConfiguration.field(SERVERS);
       if (serverList != null) {
         for (String s : serverList) if (!s.equals(NEW_NODE_TAG)) partitions.add(s);
       }
     }
+    OLogManager.instance()
+        .debug(this, "Available server nodes for clusters %s: %s", iClusterNames, partitions);
     return partitions;
   }
 
