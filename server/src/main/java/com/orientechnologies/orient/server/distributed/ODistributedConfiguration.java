@@ -314,14 +314,14 @@ public class ODistributedConfiguration {
     final Set<String> partitions = new HashSet<String>(iClusterNames.size());
     for (String p : iClusterNames) {
       ODocument clusterConfiguration = getClusterConfiguration(p);
-      OLogManager.instance().debug(this, "Cluster config [%s]: %s", p, clusterConfiguration);
       final List<String> serverList = clusterConfiguration.field(SERVERS);
+      OLogManager.instance().debug(this, "Cluster server list [%s]: %s", p, serverList);
       if (serverList != null) {
         for (String s : serverList) if (!s.equals(NEW_NODE_TAG)) partitions.add(s);
       }
     }
     OLogManager.instance()
-        .debug(this, "Available server nodes for clusters %s: %s", iClusterNames, partitions);
+        .debug(this, "Configured server nodes for clusters %s: %s", iClusterNames, partitions);
     return partitions;
   }
 
