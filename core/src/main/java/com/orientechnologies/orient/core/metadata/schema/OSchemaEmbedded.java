@@ -1,6 +1,7 @@
 package com.orientechnologies.orient.core.metadata.schema;
 
 import com.orientechnologies.common.exception.OException;
+import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseLifecycleListener;
@@ -165,6 +166,13 @@ public class OSchemaEmbedded extends OSchemaShared {
       } else clusterIds = clusterIdsToAdd;
 
       database.checkSecurity(ORule.ResourceGeneric.SCHEMA, ORole.PERMISSION_CREATE);
+      OLogManager.instance()
+          .debug(
+              this,
+              "Creating class '%s' with %d clusters: %s",
+              className,
+              clusterIdsToAdd.length,
+              Arrays.toString(clusterIdsToAdd));
 
       final String key = className.toLowerCase(Locale.ENGLISH);
 
