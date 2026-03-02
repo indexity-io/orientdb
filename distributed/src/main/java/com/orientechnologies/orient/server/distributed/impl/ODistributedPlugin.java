@@ -663,6 +663,8 @@ public class ODistributedPlugin extends OServerPluginAbstract
       }
 
       final int expectedResponses = localResult != null ? availableNodes + 1 : availableNodes;
+      OLogManager.instance()
+          .debug(this, "Active server nodes: %s", clusterManager.getActiveServers());
 
       final int quorum =
           calculateQuorum(
