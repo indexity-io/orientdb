@@ -121,6 +121,7 @@ public class ODefaultSecuritySystem implements OSecuritySystem {
     if (security.getRole("guest") == null) {
       ORole guest = security.createRole("guest", ORole.ALLOW_MODES.DENY_ALL_BUT);
       guest.addRule(ResourceGeneric.SERVER, "listDatabases", ORole.PERMISSION_ALL);
+      guest.addRule(ResourceGeneric.SERVER, "listDatabases.system", ORole.PERMISSION_ALL);
       guest.save();
     }
     // for monitoring/logging purposes, intended to connect from external monitoring systems
