@@ -1074,6 +1074,7 @@ public class OServer {
       OLogManager.instance()
           .info(this, "Using ORIENTDB_ROOT_PASSWORD variable, for root's password");
 
+    databases.getSystemDatabase().createSystemRoles();
     if (!existsRoot) {
       context.execute(
           "CREATE SYSTEM USER "

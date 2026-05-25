@@ -146,9 +146,7 @@ public class OSystemDatabase {
           type = ODatabaseType.MEMORY;
         }
         context.create(SYSTEM_DB_NAME, null, null, type, config);
-        try (ODatabaseSession session = context.openNoAuthorization(SYSTEM_DB_NAME)) {
-          ((OrientDBEmbedded) context).getSecuritySystem().createSystemRoles(session);
-        }
+        createSystemRoles();
       }
       checkServerId();
 
@@ -158,6 +156,12 @@ public class OSystemDatabase {
       } else {
         ODatabaseRecordThreadLocal.instance().remove();
       }
+    }
+  }
+
+  public void createSystemRoles() {
+    try (ODatabaseSession session = context.openNoAuthorization(SYSTEM_DB_NAME)) {
+      ((OrientDBEmbedded) context).getSecuritySystem().createSystemRoles(session);
     }
   }
 
