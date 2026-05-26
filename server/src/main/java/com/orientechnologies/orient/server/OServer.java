@@ -916,7 +916,6 @@ public class OServer {
     }
 
     configuration.isAfterFirstTime = true;
-    serverCfg.saveConfiguration();
 
     createDefaultServerUsers();
   }
