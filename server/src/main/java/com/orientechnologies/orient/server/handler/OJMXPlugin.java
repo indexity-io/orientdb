@@ -79,7 +79,7 @@ public class OJMXPlugin extends OServerPluginAbstract {
           onReadCache = new ObjectName("com.orientechnologies:type=ReadCache");
           if (mBeanServer.isRegistered(onReadCache)) mBeanServer.unregisterMBean(onReadCache);
           mBeanServer.registerMBean((OReadCacheMXBean) readCache, onReadCache);
-          OLogManager.instance().info(this, "OrientDB Disc Cache MBean registered successfully");
+          OLogManager.instance().info(this, "OrientDB Disk Cache MBean registered successfully");
         }
       }
 
@@ -114,7 +114,7 @@ public class OJMXPlugin extends OServerPluginAbstract {
       if (onReadCache != null) {
         if (mBeanServer.isRegistered(onReadCache)) {
           mBeanServer.unregisterMBean(onReadCache);
-          OLogManager.instance().info(this, "OrientDB Disc Cache MBean unregistered successfully");
+          OLogManager.instance().info(this, "OrientDB Disk Cache MBean unregistered successfully");
         }
       }
 
