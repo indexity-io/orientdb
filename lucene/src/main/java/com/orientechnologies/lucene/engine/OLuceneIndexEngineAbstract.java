@@ -127,8 +127,6 @@ public abstract class OLuceneIndexEngineAbstract
     lastAccess = new AtomicLong(System.currentTimeMillis());
 
     closed = new AtomicBoolean(true);
-
-    registerJMX();
   }
 
   @Override
@@ -190,7 +188,7 @@ public abstract class OLuceneIndexEngineAbstract
                           synchronized (OLuceneIndexEngineAbstract.this) {
                             // while on lock the index was opened
                             if (!shouldClose()) return;
-                            doClose(false);
+                            doClose(CloseOperation.COMMIT);
                           }
                         }
                         if (!closed.get()) {
@@ -264,6 +262,8 @@ public abstract class OLuceneIndexEngineAbstract
     scheduleCommitTask();
 
     addMetadataDocumentIfNotPresent();
+
+    registerJMX();
   }
 
   private void addMetadataDocumentIfNotPresent() {
@@ -347,7 +347,7 @@ public abstract class OLuceneIndexEngineAbstract
 
       if (indexWriter != null && indexWriter.isOpen()) {
         synchronized (this) {
-          doClose(true);
+          doClose(CloseOperation.DELETE);
         }
       }
 
@@ -547,14 +547,22 @@ public abstract class OLuceneIndexEngineAbstract
 
   @Override
   public synchronized void close() {
-    doClose(false);
+    doClose(CloseOperation.CLOSE);
   }
 
-  private void doClose(boolean onDelete) {
+  private enum CloseOperation {
+    COMMIT,
+    DELETE,
+    CLOSE
+  }
+
+  private void doClose(CloseOperation closeOperation) {
     if (closed.get()) return;
 
     try {
-      deregisterJMX();
+      if (closeOperation != CloseOperation.COMMIT) {
+        deregisterJMX();
+      }
 
       cancelCommitTask();
 
@@ -564,7 +572,7 @@ public abstract class OLuceneIndexEngineAbstract
 
       commitAndCloseWriter();
 
-      if (!onDelete) directory.getDirectory().close();
+      if (closeOperation != CloseOperation.DELETE) directory.getDirectory().close();
     } catch (Exception e) {
       OLogManager.instance().error(this, "Error on closing Lucene index", e);
     }
@@ -688,7 +696,6 @@ public abstract class OLuceneIndexEngineAbstract
 
   private void registerJMX() {
     // HACK: sync to avoid JMX races on embedded tests, although JMX should only be used in server
-    // mode
     synchronized (OLuceneIndexEngineAbstract.class) {
       final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
       try {
@@ -697,9 +704,11 @@ public abstract class OLuceneIndexEngineAbstract
           mBeanServer.unregisterMBean(indexName);
         }
         mBeanServer.registerMBean((OLuceneEngineMXBean) this, indexName);
+        OLogManager.instance()
+            .info(this, "Lucene Index MBean [%s] registered successfully", getName());
       } catch (Exception e) {
         throw OException.wrapException(
-            new OConfigurationException("Cannot initialize Lucene Index JMX server"), e);
+            new OConfigurationException("Cannot initialize Lucene Index MBean"), e);
       }
     }
   }
@@ -711,9 +720,11 @@ public abstract class OLuceneIndexEngineAbstract
         try {
           if (mBeanServer.isRegistered(indexName)) {
             mBeanServer.unregisterMBean(indexName);
+            OLogManager.instance()
+                .info(this, "Lucene Index MBean [%s] unregistered successfully", getName());
           }
         } catch (Exception e) {
-          OLogManager.instance().error(this, "Cannot deregister Lucene Index JMX server", e);
+          OLogManager.instance().error(this, "Cannot deregister Lucene Index MBean", e);
         }
       }
     }
