@@ -532,7 +532,28 @@ public class ODistributedPlugin extends OServerPluginAbstract
         reqId,
         iExecutionMode,
         localResult,
-        null);
+        (iRequest,
+            iNodes,
+            task,
+            nodesConcurToTheQuorum,
+            availableNodes,
+            expectedResponses,
+            quorum,
+            groupByResponse,
+            waitLocalNode) ->
+            new ODistributedResponseManagerImpl(
+                this,
+                iRequest,
+                iNodes,
+                nodesConcurToTheQuorum,
+                expectedResponses,
+                quorum,
+                waitLocalNode,
+                adjustTimeoutWithLatency(
+                    iNodes, task.getSynchronousTimeout(expectedResponses), iRequest.getId()),
+                adjustTimeoutWithLatency(
+                    iNodes, task.getTotalTimeout(availableNodes), iRequest.getId()),
+                groupByResponse));
   }
 
   public ODistributedResponse sendRequest(
@@ -563,12 +584,8 @@ public class ODistributedPlugin extends OServerPluginAbstract
     }
 
     messageService.updateMessageStats(iTask.getName());
-    if (responseManagerFactory != null) {
-      return send2Nodes(
-          req, iClusterNames, iTargetNodes, iExecutionMode, localResult, responseManagerFactory);
-    } else {
-      return send2Nodes(req, iClusterNames, iTargetNodes, iExecutionMode, localResult);
-    }
+    return send2Nodes(
+        req, iClusterNames, iTargetNodes, iExecutionMode, localResult, responseManagerFactory);
   }
 
   protected void checkForServerOnline(final ODistributedRequest iRequest)
@@ -911,43 +928,6 @@ public class ODistributedPlugin extends OServerPluginAbstract
       }
 
     return timeout + delta;
-  }
-
-  public ODistributedResponse send2Nodes(
-      final ODistributedRequest iRequest,
-      final Collection<String> iClusterNames,
-      Collection<String> iNodes,
-      final ODistributedRequest.EXECUTION_MODE iExecutionMode,
-      final Object localResult) {
-    return send2Nodes(
-        iRequest,
-        iClusterNames,
-        iNodes,
-        iExecutionMode,
-        localResult,
-        (iRequest1,
-            iNodes1,
-            task,
-            nodesConcurToTheQuorum,
-            availableNodes,
-            expectedResponses,
-            quorum,
-            groupByResponse,
-            waitLocalNode) -> {
-          return new ODistributedResponseManagerImpl(
-              this,
-              iRequest,
-              iNodes,
-              nodesConcurToTheQuorum,
-              expectedResponses,
-              quorum,
-              waitLocalNode,
-              adjustTimeoutWithLatency(
-                  iNodes, task.getSynchronousTimeout(expectedResponses), iRequest.getId()),
-              adjustTimeoutWithLatency(
-                  iNodes, task.getTotalTimeout(availableNodes), iRequest.getId()),
-              groupByResponse);
-        });
   }
 
   protected boolean waitForLocalNode(
