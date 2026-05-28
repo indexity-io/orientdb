@@ -62,6 +62,7 @@ public class ODistributedConfiguration {
 
   protected static final String NEW_NODE_STRATEGY = "newNodeStrategy";
   protected static final String READ_YOUR_WRITES = "readYourWrites";
+  protected static final String READ_ALL_WRITES = "readAllWrites";
   protected static final String EXECUTION_MODE = "executionMode";
   protected static final String EXECUTION_MODE_SYNCHRONOUS = "synchronous";
 
@@ -160,6 +161,28 @@ public class ODistributedConfiguration {
                 this,
                 "%s setting not found for cluster=%s in distributed-config.json",
                 READ_YOUR_WRITES,
+                iClusterName);
+        return true;
+      }
+    }
+    return (Boolean) value;
+  }
+
+  /**
+   * Reads all writes.
+   *
+   * @param iClusterName Cluster name, or null for *
+   */
+  public Boolean isReadAllWrites(final String iClusterName) {
+    Object value = getClusterConfiguration(iClusterName).field(READ_ALL_WRITES);
+    if (value == null) {
+      value = configuration.field(READ_ALL_WRITES);
+      if (value == null) {
+        OLogManager.instance()
+            .warn(
+                this,
+                "%s setting not found for cluster=%s in distributed-config.json",
+                READ_ALL_WRITES,
                 iClusterName);
         return true;
       }

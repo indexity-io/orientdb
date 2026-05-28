@@ -42,6 +42,7 @@ import com.orientechnologies.orient.core.OConstants;
 import com.orientechnologies.orient.core.OSignalHandler;
 import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
+import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest.QUORUM_TYPE;
 import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
@@ -683,9 +684,15 @@ public class ODistributedPlugin extends OServerPluginAbstract
       OLogManager.instance()
           .debug(this, "Active server nodes: %s", clusterManager.getActiveServers());
 
+      // To achieve "read all writes" on WRITE, upgrade to WRITE_ALL_MASTERS so every online node
+      //  must respond before completion.
+      final QUORUM_TYPE requiredQuorumType =
+          task.getQuorumType() == QUORUM_TYPE.WRITE && isReadAllWrites(cfg, iClusterNames)
+              ? QUORUM_TYPE.WRITE_ALL_MASTERS
+              : task.getQuorumType();
       final int quorum =
           calculateQuorum(
-              task.getQuorumType(),
+              requiredQuorumType,
               iClusterNames,
               cfg,
               expectedResponses,
@@ -849,7 +856,7 @@ public class ODistributedPlugin extends OServerPluginAbstract
       final ODistributedConfiguration cfg,
       final int totalServers,
       final int totalMasterServers,
-      int onlineMasters,
+      final int onlineMasters,
       final boolean checkNodesAreOnline,
       final String localNodeName) {
 
@@ -954,6 +961,25 @@ public class ODistributedPlugin extends OServerPluginAbstract
       }
     }
     return waitLocalNode;
+  }
+
+  private boolean isReadAllWrites(
+      final ODistributedConfiguration cfg, final Collection<String> iClusterNames) {
+    boolean readAllWrites = false;
+    if (cfg != null) {
+      if (iClusterNames == null || iClusterNames.isEmpty()) {
+        // DEFAULT CLUSTER (*)
+        if (cfg.isReadAllWrites(null)) readAllWrites = true;
+      } else {
+        for (String clName : iClusterNames) {
+          if (cfg.isReadAllWrites(clName)) {
+            readAllWrites = true;
+            break;
+          }
+        }
+      }
+    }
+    return readAllWrites;
   }
 
   @Override
