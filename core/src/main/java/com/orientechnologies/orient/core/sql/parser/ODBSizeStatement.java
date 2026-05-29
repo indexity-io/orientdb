@@ -119,7 +119,7 @@ public class ODBSizeStatement extends OSimpleExecStatement {
           storage.countRecords());
       return rs;
     } catch (Exception x) {
-      throw OException.wrapException(new OCommandExecutionException("Cannot execute HA STATUS"), x);
+      throw OException.wrapException(new OCommandExecutionException("Cannot execute DB SIZE"), x);
     }
   }
 
