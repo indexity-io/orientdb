@@ -7,6 +7,7 @@ import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.exception.OCommandExecutionException;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.executor.OInternalResultSet;
 import com.orientechnologies.orient.core.sql.executor.OResultInternal;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
@@ -95,10 +96,10 @@ public class OHaStatusStatement extends OSimpleExecStatement {
 
     OInternalResultSet rs = new OInternalResultSet();
     try {
-      Map<String, Object> res = database.getHaStatus(servers, this.db, latency, messages);
+      ODocument res = database.getHaStatus(servers, this.db, latency, messages);
       if (res != null) {
         OResultInternal row = new OResultInternal();
-        res.entrySet().forEach(x -> row.setProperty(x.getKey(), x.getValue()));
+        row.setElement(res);
         rs.add(row);
       }
       return rs;

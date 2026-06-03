@@ -824,7 +824,24 @@ public class OConsoleDatabaseApp extends OConsoleApplication
   public void ha(
       @ConsoleParameter(name = "command-text", description = "The command text to execute")
           String iCommandText) {
-    sqlCommand("ha", iCommandText, "\nExecuted '%s' in %f sec(s).\n", true);
+    checkForDatabase();
+
+    final List<OResult> result;
+    try (OResultSet rs = currentDatabase.command("HA " + iCommandText)) {
+      result = rs.stream().collect(Collectors.toList());
+    }
+
+    for (OResult res : result) {
+      ODocument doc = (ODocument) res.toElement();
+      for (String name : doc.getPropertyNames()) {
+        final Object value = doc.getProperty(name);
+        if (value instanceof ODocument) {
+          message("%s: %s%n%n", name, ((ODocument) value).toJSON("prettyPrint"));
+        } else {
+          message("%s: %s%n", name, value.toString().replace("\\u0000a", "\n"));
+        }
+      }
+    }
   }
 
   @ConsoleCommand(
