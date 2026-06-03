@@ -34,6 +34,7 @@ import com.orientechnologies.orient.core.metadata.sequence.OSequenceAction;
 import com.orientechnologies.orient.core.record.OEdge;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.OVertex;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.serializer.binary.OBinarySerializerFactory;
 import com.orientechnologies.orient.core.serialization.serializer.record.ORecordSerializer;
 import com.orientechnologies.orient.core.sql.executor.OExecutionPlan;
@@ -195,8 +196,7 @@ public interface ODatabaseDocumentInternal extends ODatabaseSession, ODatabaseIn
     return false;
   }
 
-  default Map<String, Object> getHaStatus(
-      boolean servers, boolean db, boolean latency, boolean messages) {
+  default ODocument getHaStatus(boolean servers, boolean db, boolean latency, boolean messages) {
     return null;
   }
 

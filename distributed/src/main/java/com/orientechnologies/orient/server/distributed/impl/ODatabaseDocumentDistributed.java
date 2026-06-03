@@ -49,6 +49,8 @@ import com.orientechnologies.orient.core.query.live.OLiveQueryHookV2;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.record.impl.ODocumentHelper;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 import com.orientechnologies.orient.core.sql.executor.OExecutionPlan;
 import com.orientechnologies.orient.core.sql.executor.OResultSet;
 import com.orientechnologies.orient.core.storage.ORecordDuplicatedException;
@@ -246,8 +248,7 @@ public class ODatabaseDocumentDistributed extends ODatabaseDocumentEmbedded {
   }
 
   @Override
-  public Map<String, Object> getHaStatus(
-      boolean servers, boolean db, boolean latency, boolean messages) {
+  public ODocument getHaStatus(boolean servers, boolean db, boolean latency, boolean messages) {
     checkSecurity(ORule.ResourceGeneric.SERVER, "status", ORole.PERMISSION_READ);
 
     if (distributedManager == null || !distributedManager.isEnabled())
@@ -257,19 +258,22 @@ public class ODatabaseDocumentDistributed extends ODatabaseDocumentEmbedded {
 
     final ODistributedConfiguration cfg = distributedManager.getDatabaseConfiguration(databaseName);
 
-    Map<String, Object> row = new HashMap<>();
-    if (servers) row.put("servers", distributedManager.getClusterConfiguration());
-    if (db) row.put("database", cfg.getDocument());
+    final ODocument row = new ODocument();
+    final ODocument clusterConfig = distributedManager.getClusterConfiguration();
+    ODocumentInternal.addOwner(clusterConfig, row);
+    if (servers) row.setProperty("servers", clusterConfig);
+    if (db) {
+      ODocument dbConfig = cfg.getDocument().copy();
+      dbConfig.removeProperty(ODocumentHelper.ATTRIBUTE_RID);
+      ODocumentInternal.addOwner(dbConfig, row);
+      row.setProperty("database", dbConfig);
+    }
     if (latency)
-      row.put(
-          "latency",
-          ODistributedOutput.formatLatency(
-              distributedManager, distributedManager.getClusterConfiguration()));
+      row.setProperty(
+          "latency", ODistributedOutput.formatLatency(distributedManager, clusterConfig));
     if (messages)
-      row.put(
-          "messages",
-          ODistributedOutput.formatMessages(
-              distributedManager, distributedManager.getClusterConfiguration()));
+      row.setProperty(
+          "messages", ODistributedOutput.formatMessages(distributedManager, clusterConfig));
 
     return row;
   }

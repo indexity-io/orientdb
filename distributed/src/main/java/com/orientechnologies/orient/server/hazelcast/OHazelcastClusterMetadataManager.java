@@ -31,6 +31,7 @@ import com.orientechnologies.orient.core.exception.OConfigurationException;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.ORecordInternal;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
 import com.orientechnologies.orient.distributed.db.OrientDBDistributed;
 import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.config.OServerParameterConfiguration;
@@ -1306,7 +1307,7 @@ public class OHazelcastClusterMetadataManager
         continue;
       }
       memberConfig = memberConfig.copy();
-
+      ODocumentInternal.addOwner(memberConfig, cluster);
       members.add(memberConfig);
 
       final String nodeName = getNodeName(member, true);
