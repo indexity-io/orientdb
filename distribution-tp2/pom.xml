@@ -91,7 +91,7 @@
         <dependency>
             <groupId>com.orientechnologies</groupId>
             <artifactId>orientdb-studio</artifactId>
-            <version>${project.version}</version>
+            <version>${orientdb.studio.version}</version>
             <type>zip</type>
         </dependency>
 
