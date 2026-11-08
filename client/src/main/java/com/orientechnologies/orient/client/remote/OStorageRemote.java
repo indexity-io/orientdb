@@ -1862,6 +1862,7 @@ public class OStorageRemote implements OStorageProxy, ORemotePushHandler, OStora
   }
 
   protected void openRemoteDatabase(String currentURL) {
+    Throwable firstError = null;
     do {
       do {
         OChannelBinaryAsynchClient network = null;
@@ -1881,6 +1882,7 @@ public class OStorageRemote implements OStorageProxy, ORemotePushHandler, OStora
           connectionManager.release(network);
           currentURL = useNewServerURL(currentURL);
         } catch (OIOException e) {
+          firstError = e;
           if (network != null) {
             // REMOVE THE NETWORK CONNECTION IF ANY
             connectionManager.remove(network);
@@ -1894,6 +1896,7 @@ public class OStorageRemote implements OStorageProxy, ORemotePushHandler, OStora
           throw e;
 
         } catch (IOException e) {
+          firstError = e;
           if (network != null) {
             connectionManager.remove(network);
           }
@@ -1915,8 +1918,10 @@ public class OStorageRemote implements OStorageProxy, ORemotePushHandler, OStora
     // REFILL ORIGINAL SERVER LIST
     serverURLs.reloadOriginalURLs();
 
-    throw new OStorageException(
-        "Cannot create a connection to remote server address(es): " + serverURLs.getUrls());
+    throw OException.wrapException(
+        new OStorageException(
+            "Cannot create a connection to remote server address(es): " + serverURLs.getUrls()),
+        firstError);
   }
 
   protected String useNewServerURL(final String iUrl) {
