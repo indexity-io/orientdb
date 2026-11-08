@@ -38,6 +38,7 @@ import com.orientechnologies.orient.core.engine.OEngine;
 import com.orientechnologies.orient.core.engine.OMemoryAndLocalPaginatedEnginesInitializer;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.exception.OSecurityException;
+import com.orientechnologies.orient.core.exception.OStorageDoesNotExistException;
 import com.orientechnologies.orient.core.exception.OStorageException;
 import com.orientechnologies.orient.core.metadata.security.auth.OAuthenticationInfo;
 import com.orientechnologies.orient.core.security.ODefaultSecuritySystem;
@@ -578,7 +579,7 @@ public class OrientDBEmbedded implements OrientDBInternal {
     OAbstractPaginatedStorage storage = storages.get(name);
     if (storage == null) {
       if (basePath == null) {
-        throw new ODatabaseException(
+        throw new OStorageDoesNotExistException(
             "Cannot open database '" + name + "' because it does not exists");
       }
       Path storagePath = Paths.get(buildName(name));
