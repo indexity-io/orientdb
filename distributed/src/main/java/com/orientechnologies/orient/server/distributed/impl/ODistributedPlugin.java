@@ -909,7 +909,7 @@ public class ODistributedPlugin extends OServerPluginAbstract
               + localNodeName
               + "' database '"
               + this.nodeName
-              + "' because it is major than available nodes ("
+              + "' because it is larger than available nodes ("
               + totalServerInQuorum
               + ")");
 
