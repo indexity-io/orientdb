@@ -3,6 +3,7 @@ package com.orientechnologies.orient.distributed.db;
 import static com.orientechnologies.orient.core.config.OGlobalConfiguration.FILE_DELETE_DELAY;
 import static com.orientechnologies.orient.core.config.OGlobalConfiguration.FILE_DELETE_RETRY;
 
+import com.orientechnologies.common.concur.OOfflineDatabaseException;
 import com.orientechnologies.common.concur.OOfflineNodeException;
 import com.orientechnologies.common.concur.lock.OModificationOperationProhibitedException;
 import com.orientechnologies.common.exception.OException;
@@ -25,6 +26,7 @@ import com.orientechnologies.orient.core.db.OrientDBConfig;
 import com.orientechnologies.orient.core.db.OrientDBEmbedded;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentEmbedded;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
+import com.orientechnologies.orient.core.exception.OStorageDoesNotExistException;
 import com.orientechnologies.orient.core.metadata.security.auth.OAuthenticationInfo;
 import com.orientechnologies.orient.core.storage.OStorage;
 import com.orientechnologies.orient.core.storage.disk.OLocalPaginatedStorage;
@@ -407,7 +409,14 @@ public class OrientDBDistributed extends OrientDBEmbedded implements OServerAwar
     } while (!dbAvailable && (System.currentTimeMillis() < endTime));
 
     if (!dbAvailable) {
-      throw new OOfflineNodeException(
+      boolean knownToCluster = plugin.getOnlineDatabaseConfiguration(name) != null;
+      boolean existsLocally = super.exists(name, null, null);
+
+      if (!knownToCluster && !existsLocally) {
+        throw new OStorageDoesNotExistException(
+            "Database '" + name + "' is not known in the distributed cluster");
+      }
+      throw new OOfflineDatabaseException(
           "database " + name + " not online on " + plugin.getLocalNodeName());
     }
   }

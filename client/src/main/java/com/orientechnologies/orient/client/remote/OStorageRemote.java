@@ -19,6 +19,7 @@
  */
 package com.orientechnologies.orient.client.remote;
 
+import com.orientechnologies.common.concur.OOfflineDatabaseException;
 import com.orientechnologies.common.concur.OOfflineNodeException;
 import com.orientechnologies.common.concur.lock.OInterruptedException;
 import com.orientechnologies.common.concur.lock.OModificationOperationProhibitedException;
@@ -1877,6 +1878,10 @@ public class OStorageRemote implements OStorageProxy, ORemotePushHandler, OStora
         } catch (OModificationOperationProhibitedException mope) {
           connectionManager.release(network);
           handleDBFreeze();
+          currentURL = useNewServerURL(currentURL);
+        } catch (OOfflineDatabaseException e) {
+          firstError = e;
+          connectionManager.release(network);
           currentURL = useNewServerURL(currentURL);
         } catch (OOfflineNodeException e) {
           connectionManager.release(network);
